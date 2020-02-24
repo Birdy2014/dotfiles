@@ -51,6 +51,9 @@ install_packages() {
         exit 1
     fi
 
+    echo "Updating system..."
+    sudo pacman -Syu
+
     if [ ! -e "/usr/bin/git" ]; then
         echo "Installing git..."
         sudo pacman -S git
@@ -70,8 +73,7 @@ install_packages() {
 
 setup_dotfiles() {
     git clone --bare https://github.com/Birdy2014/dotfiles.git $HOME/.dotfiles
-    alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
-    config checkout
+    git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME checkout
 }
 
 install_packages
