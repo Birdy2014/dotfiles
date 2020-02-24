@@ -1,0 +1,53 @@
+#! /bin/sh
+
+# Monitors
+if [ "$device" == "laptop" ]; then
+    bspc monitor eDP1 -d 1 2 3 4 5 6 7 8 9 10
+else
+    bspc monitor HDMI-0 -d 1 2 3 4 5 6 7 8 9 10
+    bspc monitor HDMI-1 -d 11 12 13 14 15
+fi
+
+# bspwm config
+bspc config pointer_modifier super
+bspc config pointer_action1 move
+bspc config pointer_action2 resize_corner
+
+bspc config border_width         1
+bspc config window_gap           5
+
+bspc config split_ratio          0.50
+bspc config borderless_monocle   false
+bspc config gapless_monocle      false
+
+bspc rule -a discord desktop='^11' state=fullscreen
+bspc rule -a Steam desktop='^3'
+bspc rule -a KeePassXC desktop='^10'
+bspc rule -a Nextcloud desktop='^10' state=tiled 
+bspc rule -a Thunderbird desktop='^9'
+bspc rule -a Zathura state=tiled
+
+xsetroot -cursor_name left_ptr
+xset s 3600 dpms 3600 3600 3600 # X screensaver time for light-locker
+picom &
+~/.config/polybar/launch.sh &
+#feh --bg-scale ~/Pictures/portal-aperture-wallpaper.jpg
+feh --bg-fill "/run/media/moritz/500GBFestplatte/Steam-Linux/steamapps/common/The Witcher 3/Hearts of Stone extras/Wallpapers/Geralt&Ciri/1920x1080/dual_monitor_wallpapers_geralt&ciri_pack_right_EN.png" --bg-fill "/run/media/moritz/500GBFestplatte/Steam-Linux/steamapps/common/The Witcher 3/Hearts of Stone extras/Wallpapers/Geralt&Ciri/1920x1080/dual_monitor_wallpapers_geralt&ciri_pack_left_EN.png"
+light-locker &
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+
+# load german keyboard layout and then start sxhkd
+setxkbmap de
+sxhkd &
+
+# autostart
+if [ "$device" != "laptop" ]; then
+    discord &
+    steam &
+    thunderbird &
+fi
+
+nextcloud &
+
+sleep 5s
+secret-tool lookup name keepass | keepassxc --pw-stdin /home/moritz/Documents/Passwörter.kdbx &
