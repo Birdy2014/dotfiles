@@ -28,8 +28,6 @@ pkglist=(
     "vim-easymotion"
     "vim-indent-object"
     "vim-latexsuite"
-    "vim-minibufexpl"
-    "vim-nerdtree"
     "vim-spell-de"
     "vim-supertab"
     "vim-surround"

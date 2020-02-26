@@ -11,17 +11,13 @@ colorscheme github
 "set leader to space
 "let mapleader=" "
 
-"nerdtree
-noremap <C-n> :NERDTreeToggle<CR>
-
-"tabs
-noremap ü :tabnew<CR>
-
-"MiniBufExplorer
-let g:miniBufExplMapWindowNavVim = 1
-nnoremap <C-m> :MBEToggle<CR>
-
-noremap <C-ü> :enew
+" buffer
+set hidden
+let g:airline#extensions#tabline#enabled = 1
+noremap <C-j> :bnext<CR>             "next buffer
+noremap <C-k> :bprev<CR>             "previous buffer
+noremap <C-n> :enew<CR>:Ex<CR>       "create buffer
+noremap <C-d> :bd<CR>                "delete buffer
 
 """ splits """
 set splitbelow
