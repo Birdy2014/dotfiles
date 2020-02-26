@@ -14,10 +14,10 @@ colorscheme github
 " buffer
 set hidden
 let g:airline#extensions#tabline#enabled = 1
-noremap <C-j> :bnext<CR>             "next buffer
-noremap <C-k> :bprev<CR>             "previous buffer
-noremap <C-n> :enew<CR>:Ex<CR>       "create buffer
-noremap <C-d> :bd<CR>                "delete buffer
+nnoremap <C-j> :bnext<CR>
+nnoremap <C-k> :bprev<CR>
+nnoremap <C-n> :enew<CR>:Ex<CR>
+nnoremap <C-d> :bd<CR>
 
 """ splits """
 set splitbelow
