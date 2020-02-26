@@ -17,7 +17,7 @@ let g:airline#extensions#tabline#enabled = 1
 nnoremap <C-j> :bnext<CR>
 nnoremap <C-k> :bprev<CR>
 nnoremap <C-n> :enew<CR>:Ex<CR>
-nnoremap <C-d> :bd<CR>
+nnoremap <C-m> :bd<CR>
 
 """ splits """
 set splitbelow
