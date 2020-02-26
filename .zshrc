@@ -61,7 +61,7 @@ ZSH_THEME="agnoster"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git extract)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -71,9 +71,6 @@ source $ZSH/oh-my-zsh.sh
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
-
-# Functions
-se() { fzf | xargs -o -r "rifle" }
 
 # Aliases
 alias ls='ls --color=auto'
