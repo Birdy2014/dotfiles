@@ -123,7 +123,7 @@ font-2 = siji:pixelsize=10;1
   
 modules-left = bspwm xwindow
 modules-center = 
-modules-right = pulseaudio memory cpu wlan battery date
+modules-right = pulseaudio memory cpu xbacklight wlan battery date
   
 wm-restack = bspwm
   
@@ -248,7 +248,7 @@ label = %percentage_used%%
 
 [module/wlan]
 type = internal/network
-interface = net1
+interface = wlp0s20f3
 interval = 3.0
 
 format-connected = <ramp-signal> <label-connected>
@@ -344,7 +344,7 @@ bar-volume-empty-foreground = ${colors.foreground-alt}
 
 [module/battery]
 type = internal/battery
-battery = BAT0
+battery = BAT1
 adapter = ADP1
 full-at = 98
 
