@@ -27,7 +27,6 @@ pkglist=(
     "vim-ctrlp"
     "vim-easymotion"
     "vim-indent-object"
-    "vim-latexsuite"
     "vim-spell-de"
     "vim-supertab"
     "vim-surround"
