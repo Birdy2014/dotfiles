@@ -75,7 +75,7 @@ source $ZSH/oh-my-zsh.sh
 # Aliases
 alias ls='ls --color=auto'
 
-export EDITOR=vim
+export EDITOR=nvim
 export ANDROID_HOME=~/Android/Sdk
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 
