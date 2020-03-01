@@ -2,7 +2,7 @@ declare -a pkglist
 
 pkglist=(
     # terminal
-    "rxvt-unicode"
+    "rxvt-unicode-truecolor"
     "urxvt-perls"
     "zsh"
     "zsh-syntax-highlighting"
@@ -18,22 +18,8 @@ pkglist=(
     "lightdm-gtk-greeter"
     "light-locker"
 
-    # vim
-    "gvim"
-    "vim-airline"
-    "vim-ale"
-    "vim-align"
-    "vim-colorsamplerpack"
-    "vim-ctrlp"
-    "vim-easymotion"
-    "vim-indent-object"
-    "vim-spell-de"
-    "vim-supertab"
-    "vim-surround"
-    "vim-syntastic"
-    "vim-workspace"
-
     # other applications
+    "neovim"
     "nerd-fonts-complete"
     "firefox"
     "ranger"
@@ -66,6 +52,9 @@ install_packages() {
     # install packages
     echo "installing packages..."
     yay --noconfirm --needed -S ${pkglist[*]}
+
+    # install spacevim
+    curl -sLf https://spacevim.org/install.sh | bash
 }
 
 setup_dotfiles() {
