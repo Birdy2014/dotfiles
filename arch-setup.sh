@@ -17,6 +17,7 @@ pkglist=(
     "lightdm"
     "lightdm-gtk-greeter"
     "light-locker"
+    "xorg-xsetroot"
 
     # other applications
     "neovim"
@@ -26,6 +27,9 @@ pkglist=(
     "zathura"
     "git"
     "sudo"
+    "python-pip"
+    "clang"
+    "ctags"
 )
 
 install_packages() {
@@ -55,6 +59,9 @@ install_packages() {
 
     # install spacevim
     curl -sLf https://spacevim.org/install.sh | bash
+
+    # install pip modules
+    pip3 install --user --upgrade pynvim
 }
 
 setup_dotfiles() {
