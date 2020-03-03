@@ -47,7 +47,7 @@ if [ "$device" != "laptop" ]; then
     thunderbird &
 fi
 
-syncthing & # don't run syncthing using systemd because of encryption
+syncthing --no-bowser & # don't run syncthing using systemd because of encryption
 nextcloud &
 
 sleep 5s
