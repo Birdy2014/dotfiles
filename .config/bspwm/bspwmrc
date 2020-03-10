@@ -31,8 +31,7 @@ xsetroot -cursor_name left_ptr
 xset s 3600 dpms 3600 3600 3600 # X screensaver time for light-locker
 picom &
 ~/.config/polybar/launch.sh &
-#feh --bg-scale ~/Pictures/portal-aperture-wallpaper.jpg
-feh --bg-fill "/run/media/moritz/500GBFestplatte/Steam-Linux/steamapps/common/The Witcher 3/Hearts of Stone extras/Wallpapers/Geralt&Ciri/1920x1080/dual_monitor_wallpapers_geralt&ciri_pack_right_EN.png" --bg-fill "/run/media/moritz/500GBFestplatte/Steam-Linux/steamapps/common/The Witcher 3/Hearts of Stone extras/Wallpapers/Geralt&Ciri/1920x1080/dual_monitor_wallpapers_geralt&ciri_pack_left_EN.png"
+~/.fehbg
 light-locker &
 /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 
@@ -45,10 +44,9 @@ if [ "$device" != "laptop" ]; then
     discord &
     steam &
     thunderbird &
+    sleep 5s
+    secret-tool lookup name keepass | keepassxc --pw-stdin /home/moritz/Documents/Passwörter.kdbx &
+else
+    sleep 5s
+    syncthing --no-bowser & # don't run syncthing using systemd because of encryption
 fi
-
-syncthing --no-bowser & # don't run syncthing using systemd because of encryption
-nextcloud &
-
-sleep 5s
-secret-tool lookup name keepass | keepassxc --pw-stdin /home/moritz/Documents/Passwörter.kdbx &
