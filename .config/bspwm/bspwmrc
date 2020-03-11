@@ -34,6 +34,7 @@ picom &
 ~/.fehbg
 light-locker &
 /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+wmname compiz # required for Java GUIs
 
 # load german keyboard layout and then start sxhkd
 setxkbmap de
