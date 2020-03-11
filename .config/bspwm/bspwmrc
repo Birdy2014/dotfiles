@@ -48,5 +48,5 @@ if [ "$device" != "laptop" ]; then
     secret-tool lookup name keepass | keepassxc --pw-stdin /home/moritz/Documents/Passwörter.kdbx &
 else
     sleep 5s
-    syncthing --no-bowser & # don't run syncthing using systemd because of encryption
+    syncthing -no-browser & # don't run syncthing using systemd because of encryption
 fi
