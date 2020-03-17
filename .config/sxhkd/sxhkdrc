@@ -12,14 +12,13 @@ super + d
 
 # program hotkeys
 super + w
-    firefox
+    firefox -p default-release
+
+super + y
+    firefox -p Youtube
 
 super + n
     urxvt -e ranger 
-
-# scratchpad
-super + s
-    tdrop -ma -w -4 -y 30 urxvt
 
 # make sxhkd reload its configuration files:
 super + Escape
@@ -38,8 +37,8 @@ ctrl + super + alt + l
 #
 
 # quit/restart bspwm
-super + alt + {q,r}
-    bspc {quit,wm -r}
+ctrl + super + alt + q
+    bspc quit
 
 # close and kill
 super + {_,shift + }q
@@ -49,13 +48,9 @@ super + {_,shift + }q
 super + m
     bspc desktop -l next
 
-# send the newest marked node to the newest preselected node
-super + y
-    bspc node newest.marked.local -n newest.!automatic.local
-
 # swap the current node and the biggest node
 super + g
-    bspc node -s biggest
+    bspc node -s biggest.local
 
 #
 # state/flags
@@ -64,10 +59,6 @@ super + g
 # set the window state
 super + {t,shift + t,shift + f,f}
     bspc node -t {tiled,pseudo_tiled,floating,fullscreen}
-
-# set the node flags
-#super + ctrl + {m,x,y,z}
-#    bspc node -g {marked,locked,sticky,private}
 
 #
 # focus/swap
