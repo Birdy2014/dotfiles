@@ -2,8 +2,6 @@ declare -a pkglist
 
 pkglist=(
     # terminal
-    "rxvt-unicode-truecolor"
-    "urxvt-perls"
     "zsh"
     "zsh-syntax-highlighting"
 
@@ -33,10 +31,8 @@ pkglist=(
 )
 
 install_packages() {
-    if [ ! -e "/usr/bin/sudo" ]; then
-        echo "please install sudo"
-        exit 1
-    fi
+    [ "$EUID" -eq 0 ] && echo "Don't run this script as root" && exit 1
+    [ ! -e "/usr/bin/sudo" ] && echo "please install sudo" && exit 1
 
     echo "Updating system..."
     sudo pacman -Syu
@@ -57,11 +53,17 @@ install_packages() {
     echo "installing packages..."
     yay --noconfirm --needed -S ${pkglist[*]}
 
-    # install spacevim
-    curl -sLf https://spacevim.org/install.sh | bash
-
     # install pip modules
     pip3 install --user --upgrade pynvim
+    
+    # install custom packages
+    cd ~/pkgs
+    for pkgname in *; do
+        mkdir /tmp/$pkgname
+        cp ~/pkgs/$pkgname /tmp/$pkgname/PKGBUILD
+        cd /tmp/$pkgname
+        makepkg -si
+    done
 }
 
 setup_dotfiles() {
