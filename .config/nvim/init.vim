@@ -28,7 +28,7 @@ call plug#end()
 " -----------------------
 " NVIM
 set hidden
-set relativenumber
+set number relativenumber
 set mouse=a
 set expandtab
 set smarttab
@@ -39,8 +39,6 @@ set splitright
 set timeoutlen=500
 set spelllang=en,de
 colorscheme gruvbox
-hi! Normal ctermbg=NONE guibg=NONE
-hi! NonText ctermbg=NONE guibg=NONE
 " DEOPLETE
 let g:deoplete#enable_at_startup = 1
 " NERDTREE
