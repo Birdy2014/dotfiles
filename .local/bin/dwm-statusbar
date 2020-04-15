@@ -11,9 +11,9 @@ update_statusbar_laptop() {
 update_statusbar() {
     STATUSBAR_TIME=$(date "+%a %d %b %H:%M")
     if [ $(pamixer --get-mute) = true ]; then
-        STATUSBAR_VOLUME=🔈
+        STATUSBAR_VOLUME="🔈"
     else
-        STATUSBAR_VOLUME=🔊 $(pamixer --get-volume)
+        STATUSBAR_VOLUME="🔊 $(pamixer --get-volume)"
     fi
 
     if [ "$device" = "laptop" ]; then
@@ -21,20 +21,20 @@ update_statusbar() {
         BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/charge)
         if [ $BATTERY_STATUS = Discharging ]; then
             if [ $BATTERY_CHARGE < 10 ]; then
-                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
             elif [ $BATTERY_CHARGE < 25 ]; then
-                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
             elif [ $BATTERY_CHARGE < 50 ]; then
-                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
             elif [ $BATTERY_CHARGE < 75 ]; then
-                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
             else
-                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
             fi
         elif [ $BATTERY_STATUS = Charging ]; then
-            STATUSBAR_BATTERY= $BATTERY_CHARGE
+            STATUSBAR_BATTERY=" $BATTERY_CHARGE"
         else
-            STATUSBAR_BATTERY=ERR
+            STATUSBAR_BATTERY="ERR"
         fi
         update_statusbar_laptop
     else
