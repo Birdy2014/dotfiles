@@ -1,0 +1,56 @@
+#!/usr/bin/sh
+
+update_statusbar_desktop() {
+    xsetroot -name "$STATUSBAR_VOLUME | $STATUSBAR_TIME"
+}
+
+update_statusbar_laptop() {
+    xsetroot -name "$STATUSBAR_WIFI | $STATUSBAR_BATTERY | $STATUSBAR_VOLUME | $STATUSBAR_TIME"
+}
+
+update_statusbar() {
+    STATUSBAR_TIME=$(date "+%a %d %b %H:%M")
+    if [ $(pamixer --get-mute) = true ]; then
+        STATUSBAR_VOLUME=🔈
+    else
+        STATUSBAR_VOLUME=🔊 $(pamixer --get-volume)
+    fi
+
+    if [ "$device" = "laptop" ]; then
+        BATTERY_STATUS=$(cat /sys/class/power_supply/BAT?/status)
+        BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/charge)
+        if [ $BATTERY_STATUS = Discharging ]; then
+            if [ $BATTERY_CHARGE < 10 ]; then
+                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+            elif [ $BATTERY_CHARGE < 25 ]; then
+                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+            elif [ $BATTERY_CHARGE < 50 ]; then
+                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+            elif [ $BATTERY_CHARGE < 75 ]; then
+                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+            else
+                STATUSBAR_BATTERY=  $BATTERY_CHARGE
+            fi
+        elif [ $BATTERY_STATUS = Charging ]; then
+            STATUSBAR_BATTERY= $BATTERY_CHARGE
+        else
+            STATUSBAR_BATTERY=ERR
+        fi
+        update_statusbar_laptop
+    else
+        update_statusbar_desktop
+    fi
+}
+
+timer() {
+    while true; do
+        update_statusbar
+        sleep 1m
+    done
+}
+
+case $1 in
+    refresh) update_statusbar;;
+    timer) [ $(ps -e | grep $(basename $0) | wc -l) -ge 3 ] || timer &;;
+    stop) killall $(basename $0)
+esac

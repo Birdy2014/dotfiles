@@ -1,0 +1,34 @@
+# Maintainer: Moritz Vogel <moritv7@gmail.com>
+pkgname=dwm-birdy2014
+pkgver=1.0
+pkgrel=1
+pkgdesc="My fork of the dynamic window manager by suckless"
+arch=(x86_64)
+url="https://github.com/Birdy2014/dwm"
+license=()
+groups=()
+depends=(pamixer)
+makedepends=(git)
+checkdepends=()
+optdepends=()
+provides=(dwm)
+conflicts=()
+replaces=()
+backup=()
+options=()
+install=
+changelog=
+source=("git+https://github.com/Birdy2014/dwm.git")
+noextract=()
+md5sums=("SKIP")
+validpgpkeys=()
+
+build() {
+	cd dwm
+	make
+}
+
+package() {
+	cd dwm
+	make DESTDIR="$pkgdir/" PREFIX="/usr" install
+}
