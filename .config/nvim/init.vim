@@ -65,11 +65,12 @@ nnoremap <Leader>bn       :bn<CR>
 nnoremap <Leader>bN       :bp<CR>
 nnoremap <Leader>bd       :bd<CR>
 nnoremap <Leader>bb       :enew<CR>
+nnoremap <c-n>            :bn<CR>
 " SPLITS
 nnoremap <Leader>sl       :vs<CR>
 nnoremap <Leader>sj       :sp<CR>
 " NERDTREE
-nnoremap <c-n>            :NERDTreeToggle<CR>
+nnoremap <Leader>n        :NERDTreeToggle<CR>
 " TERMINAL
 tnoremap <Esc>            <C-\><C-n>
 nnoremap <Leader>t        :new<CR>:term<CR>
