@@ -18,7 +18,7 @@ update_statusbar() {
 
     if [ "$device" = "laptop" ]; then
         BATTERY_STATUS=$(cat /sys/class/power_supply/BAT?/status)
-        BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/charge)
+        BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/capacity)
         if [ $BATTERY_STATUS = Discharging ]; then
             if [ $BATTERY_CHARGE < 10 ]; then
                 STATUSBAR_BATTERY="  $BATTERY_CHARGE"
