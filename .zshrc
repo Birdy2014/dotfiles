@@ -74,6 +74,7 @@ source $ZSH/oh-my-zsh.sh
 
 # Aliases
 alias ls='ls --color=auto'
+alias tm='tmux attach || tmux new-session'
 
 export EDITOR=nvim
 export ANDROID_HOME=~/Android/Sdk
