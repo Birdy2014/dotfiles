@@ -1,0 +1,52 @@
+#!/usr/bin/sh
+
+list() {
+    lsblk
+}
+
+mount() {
+    [ -n "$1" ] && udisksctl mount -b /dev/$1
+    [ -n "$1" ] || (selm && [ -n "$PART" ] && mount $PART)
+}
+
+unmount() {
+    [ -n "$1" ] && udisksctl unmount -b /dev/$1
+    [ -n "$1" ] || (selu && [ -n "$PART" ] && unmount $PART)
+}
+
+open() {
+    selo && [ -n "$PART" ] && ranger $PART
+}
+
+selm() {
+    PART=$(lsblk | grep part | awk '{print match($7, /[^ ]/) ? "" : ($1 " " $4)}' | sed -r '/^\s*$/d' | cut -c7- | dmenu | awk '{print $1}')
+}
+
+selu() {
+    PART=$(lsblk | grep part | awk '{print match($7, /[^ ]/) ? ($1 " " $4 " " $7) : ""}' | sed -r '/^\s*$/d' | cut -c7- | dmenu -l 10 | awk '{print $1}')
+}
+
+selo() {
+    PART=$(lsblk | grep part | awk '{print match($7, /[^ ]/) ? ($1 " " $4 " " $7) : ""}' | sed -r '/^\s*$/d' | cut -c7- | dmenu -l 10 | awk '{print $3}')
+}
+
+help() {
+    echo "Usage: disk [option] <disk>"
+    echo "options:"
+    echo "  list / ls"
+    echo "  mount / m"
+    echo "  unmount / u"
+    echo "  open / o"
+}
+
+case $1 in
+    list) list;;
+    mount) mount $2;;
+    unmount) unmount $2;;
+    open) open;;
+    ls) list;;
+    m) mount $2;;
+    u) unmount $2;;
+    o) open;;
+    *) help;;
+esac
