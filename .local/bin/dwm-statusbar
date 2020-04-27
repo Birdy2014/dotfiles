@@ -20,13 +20,13 @@ update_statusbar() {
         BATTERY_STATUS=$(cat /sys/class/power_supply/BAT?/status)
         BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/capacity)
         if [ $BATTERY_STATUS = Discharging ]; then
-            if [ $BATTERY_CHARGE < 10 ]; then
+            if [ $BATTERY_CHARGE -lt 10 ]; then
                 STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            elif [ $BATTERY_CHARGE < 25 ]; then
+            elif [ $BATTERY_CHARGE -lt 25 ]; then
                 STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            elif [ $BATTERY_CHARGE < 50 ]; then
+            elif [ $BATTERY_CHARGE -lt 50 ]; then
                 STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            elif [ $BATTERY_CHARGE < 75 ]; then
+            elif [ $BATTERY_CHARGE -lt 75 ]; then
                 STATUSBAR_BATTERY="  $BATTERY_CHARGE"
             else
                 STATUSBAR_BATTERY="  $BATTERY_CHARGE"
