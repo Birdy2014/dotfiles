@@ -15,7 +15,6 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'preservim/nerdtree'
     Plug 'Xuyuanp/nerdtree-git-plugin'
     Plug 'mhinz/vim-startify'
-    Plug 'dense-analysis/ale'
     Plug 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
     Plug 'mhinz/vim-signify'
     Plug 'junegunn/fzf.vim'
@@ -23,6 +22,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'jiangmiao/auto-pairs'
     Plug 'christoomey/vim-tmux-navigator'
     Plug 'neoclide/coc.nvim', {'branch': 'release'}
+    Plug 'alvan/vim-closetag'
 call plug#end()
 
 " -----------------------
@@ -78,5 +78,3 @@ nnoremap <Leader>t        :new<CR>:term<CR>
 nnoremap <silent><leader> :WhichKey '<Space>'<CR>
 " FZF
 nnoremap <Leader>f        :Files<CR>
-" ALE
-nnoremap <Leader>d        :ALEGoToDefinition<CR>
