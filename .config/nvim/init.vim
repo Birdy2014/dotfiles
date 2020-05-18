@@ -19,10 +19,10 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'mhinz/vim-signify'
     Plug 'junegunn/fzf.vim'
     Plug 'ryanoasis/vim-devicons'
-    Plug 'jiangmiao/auto-pairs'
     Plug 'christoomey/vim-tmux-navigator'
     Plug 'neoclide/coc.nvim', {'branch': 'release'}
     Plug 'alvan/vim-closetag'
+    Plug 'unblevable/quick-scope'
 call plug#end()
 
 " -----------------------
@@ -55,6 +55,8 @@ let g:fzf_preview_window = 'right:60%'
 " SUPERTAB
 let g:SuperTabMappingForward = '<s-tab>'
 let g:SuperTabMappingBackward = '<tab>'
+" QUICKSCOPE
+let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
 
 " -----------------------
 "      KEYBINDINGS
