@@ -1,44 +1,48 @@
 #!/usr/bin/sh
 
-update_statusbar_desktop() {
-    xsetroot -name "$STATUSBAR_VOLUME | $STATUSBAR_TIME"
+get_time() {
+    echo "$(date "+%a %d %b %H:%M")"
 }
 
-update_statusbar_laptop() {
-    xsetroot -name "$STATUSBAR_WIFI | $STATUSBAR_BATTERY | $STATUSBAR_VOLUME | $STATUSBAR_TIME"
+get_volume() {
+    if [ $(pamixer --get-mute) = true ]; then
+        echo "🔈"
+    else
+        echo "🔊 $(pamixer --get-volume)"
+    fi
+}
+
+get_battery() {
+    BATTERY_STATUS=$(cat /sys/class/power_supply/BAT?/status)
+    BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/capacity)
+    if [ $BATTERY_STATUS = Discharging ]; then
+        if [ $BATTERY_CHARGE -lt 10 ]; then
+            echo "  $BATTERY_CHARGE"
+        elif [ $BATTERY_CHARGE -lt 25 ]; then
+            echo "  $BATTERY_CHARGE"
+        elif [ $BATTERY_CHARGE -lt 50 ]; then
+            echo "  $BATTERY_CHARGE"
+        elif [ $BATTERY_CHARGE -lt 75 ]; then
+            echo "  $BATTERY_CHARGE"
+        else
+            echo "  $BATTERY_CHARGE"
+        fi
+    elif [ $BATTERY_STATUS = Charging ]; then
+        echo " $BATTERY_CHARGE"
+    else
+        echo "ERR"
+    fi
+}
+
+get_wifi() {
+    echo "wifi todo"
 }
 
 update_statusbar() {
-    STATUSBAR_TIME=$(date "+%a %d %b %H:%M")
-    if [ $(pamixer --get-mute) = true ]; then
-        STATUSBAR_VOLUME="🔈"
-    else
-        STATUSBAR_VOLUME="🔊 $(pamixer --get-volume)"
-    fi
-
     if [ "$device" = "laptop" ]; then
-        BATTERY_STATUS=$(cat /sys/class/power_supply/BAT?/status)
-        BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/capacity)
-        if [ $BATTERY_STATUS = Discharging ]; then
-            if [ $BATTERY_CHARGE -lt 10 ]; then
-                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            elif [ $BATTERY_CHARGE -lt 25 ]; then
-                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            elif [ $BATTERY_CHARGE -lt 50 ]; then
-                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            elif [ $BATTERY_CHARGE -lt 75 ]; then
-                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            else
-                STATUSBAR_BATTERY="  $BATTERY_CHARGE"
-            fi
-        elif [ $BATTERY_STATUS = Charging ]; then
-            STATUSBAR_BATTERY=" $BATTERY_CHARGE"
-        else
-            STATUSBAR_BATTERY="ERR"
-        fi
-        update_statusbar_laptop
+        xsetroot -name "$(get_wifi) | $(get_battery) | $(get_volume) | $(get_time)"
     else
-        update_statusbar_desktop
+        xsetroot -name "$(get_volume) | $(get_time)"
     fi
 }
 
