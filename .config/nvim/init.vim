@@ -26,6 +26,17 @@ call plug#begin(stdpath('data') . '/plugged')
 call plug#end()
 
 " -----------------------
+"       FUNCTIONS
+" -----------------------
+function! s:show_documentation()
+  if (index(['vim','help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+" -----------------------
 "     CONFIGURATION
 " -----------------------
 " NVIM
@@ -80,3 +91,5 @@ nnoremap <Leader>t        :new<CR>:term<CR>
 nnoremap <silent><leader> :WhichKey '<Space>'<CR>
 " FZF
 nnoremap <Leader>f        :Files<CR>
+" COC
+nnoremap <silent> K :call <SID>show_documentation()<CR>
