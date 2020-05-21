@@ -19,7 +19,6 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'mhinz/vim-signify'
     Plug 'junegunn/fzf.vim'
     Plug 'ryanoasis/vim-devicons'
-    Plug 'christoomey/vim-tmux-navigator'
     Plug 'neoclide/coc.nvim', {'branch': 'release'}
     Plug 'alvan/vim-closetag'
     Plug 'unblevable/quick-scope'
@@ -74,16 +73,17 @@ let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
 " -----------------------
 let mapleader=" "
 " BUFFERS
-nnoremap <Leader>bn       :bn<CR>
-nnoremap <Leader>bN       :bp<CR>
 nnoremap <Leader>bd       :bd<CR>
 nnoremap <Leader>bb       :enew<CR>
-nnoremap <c-n>            :bn<CR>
+nnoremap <silent> <c-j>   :bn<CR>
+nnoremap <silent> <c-k>   :bp<CR>
 " SPLITS
 nnoremap <Leader>sl       :vs<CR>
 nnoremap <Leader>sj       :sp<CR>
+nnoremap <silent> <c-h>   <c-w>h
+nnoremap <silent> <c-l>   <c-w>l
 " NERDTREE
-nnoremap <Leader>n        :NERDTreeToggle<CR>
+nnoremap <silent> <c-n>   :NERDTreeToggle<CR>
 " TERMINAL
 tnoremap <Esc>            <C-\><C-n>
 nnoremap <Leader>t        :new<CR>:term<CR>
