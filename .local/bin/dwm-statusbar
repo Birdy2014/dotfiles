@@ -35,7 +35,9 @@ get_battery() {
 }
 
 get_wifi() {
-    echo "wifi todo"
+    WIFI="$(nmcli -g NAME connection show --active || echo '')"
+    [ "$WIFI" = "" ] && WIFI="not connected"
+    echo $WIFI
 }
 
 update_statusbar() {
