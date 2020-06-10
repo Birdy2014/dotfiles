@@ -1,0 +1,28 @@
+#!/usr/bin/sh
+
+[ $# = 0 ] && echo "Usage: extract [file ...]"
+
+while [ $# -gt 0 ]; do
+    if [ ! -f "$1" ]; then
+        echo "'$1' is not a file" >&2
+        shift
+        continue
+    fi
+
+    dir="${1%.*}"
+    case "$1" in
+        *.tar*|*.tgz|*.tbz|*.tbz2|*.txz|*.tlz|*.tzst)
+            mkdir "$dir"
+            tar xvf "$1" -C "$dir";;
+        *.rar)
+            unrar x -ad "$1";;
+        *.zip)
+            unzip "$1" -d "$dir";;
+        *.7z)
+            7za x "$1";;
+        *)
+            echo "Cannot extract file: $1" >&2;;
+    esac
+
+    shift
+done
