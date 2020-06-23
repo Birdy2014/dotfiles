@@ -22,6 +22,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'neoclide/coc.nvim', {'branch': 'release'}
     Plug 'alvan/vim-closetag'
     Plug 'unblevable/quick-scope'
+    Plug 'vimwiki/vimwiki'
 call plug#end()
 
 " -----------------------
