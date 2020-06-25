@@ -1,0 +1,85 @@
+#!/usr/bin/sh
+
+pkglist=(
+    # terminal
+    "zsh"
+    "zsh-syntax-highlighting"
+
+    # desktop
+    "xorg-server"
+    "picom"
+    "lightdm"
+    "lightdm-gtk-greeter"
+    "light-locker"
+    "xorg-xsetroot"
+
+    # other applications
+    "neovim"
+    "python-pynvim"
+    "firefox"
+    "ranger"
+    "zathura"
+    "git"
+    "sudo"
+    "python-pip"
+    "clang"
+    "ctags"
+)
+
+aurpkgs=(
+    "python-ueberzug"
+    "nerd-fonts-mononoki"
+)
+
+install_git() {
+    [ ! -e "/usr/bin/git" ] && {
+        echo "Installing git..."
+        sudo pacman -S git
+    }
+}
+
+install_packages() {
+    [ "$EUID" -eq 0 ] && echo "Don't run this script as root" && exit 1
+    [ ! -e "/usr/bin/sudo" ] && echo "please install sudo" && exit 1
+
+    echo "Updating system..."
+    sudo pacman -Syu --noconfirm
+
+    [ ! -e "/usr/bin/yay" ] && {
+        echo "Installing yay..."
+        git clone https://aur.archlinux.org/yay.git /tmp/yay
+        cd /tmp/yay
+        makepkg -si --noconfirm && cd ..&& rm -rf ./yay
+    }
+
+    # install packages
+    echo "Installing pacman packages..."
+    sudo pacman --noconfirm --needed -S ${pkglist[*]}
+
+    echo "Installing AUR packages..."
+    for pkgname in $aurpkgs; do
+        pacman -Qi $pkgname > /dev/null || yay --noconfirm -S $pkgname
+    done
+
+    # install custom packages
+    [ -d ~/pkgs ] && {
+        cd ~/pkgs
+        for pkgname in *; do
+            [ -d "/tmp/$pkgname" ] && rm -rf "/tmp/$pkgname"
+            mkdir /tmp/$pkgname
+            cp ~/pkgs/$pkgname /tmp/$pkgname/PKGBUILD
+            cd /tmp/$pkgname
+            makepkg -si --noconfirm && cd .. && rm -rf ./$pkgname
+        done
+    }
+}
+
+setup_dotfiles() {
+    git clone --bare https://github.com/Birdy2014/dotfiles.git $HOME/.dotfiles
+    git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME checkout
+}
+
+install_git
+[ -d "$HOME/.dotfiles" ] && git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME pull || setup_dotfiles
+install_packages
+
