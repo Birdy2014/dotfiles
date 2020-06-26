@@ -29,6 +29,7 @@ pkglist=(
 aurpkgs=(
     "python-ueberzug"
     "nerd-fonts-mononoki"
+    "zsh-theme-minimal"
 )
 
 install_git() {
