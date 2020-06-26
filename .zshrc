@@ -6,7 +6,12 @@ SAVEHIST=1000
 
 autoload -Uz tetriscurses
 autoload -Uz edit-command-line
+autoload -Uz compinit
 zle -N edit-command-line
+
+# tab completion
+compinit
+zstyle ':completion:*' menu select
 
 # Aliases
 alias ls='ls --color=auto'
