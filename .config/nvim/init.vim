@@ -9,7 +9,6 @@ endif
 
 call plug#begin(stdpath('data') . '/plugged')
     Plug 'vim-airline/vim-airline'
-    Plug 'vim-airline/vim-airline-themes'
     Plug 'morhetz/gruvbox'
     Plug 'ervandew/supertab'
     Plug 'preservim/nerdtree'
@@ -23,6 +22,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'alvan/vim-closetag'
     Plug 'unblevable/quick-scope'
     Plug 'vimwiki/vimwiki'
+    Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
 call plug#end()
 
 " -----------------------
@@ -52,6 +52,7 @@ set splitright
 set timeoutlen=500
 set spelllang=en,de
 set noshowmode
+set termguicolors
 colorscheme gruvbox
 " NERDTREE
 let g:NERDTreeWinPos = "right"
@@ -68,6 +69,8 @@ let g:SuperTabMappingForward = '<s-tab>'
 let g:SuperTabMappingBackward = '<tab>'
 " QUICKSCOPE
 let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
+" HEXOKINASE
+let g:Hexokinase_highlighters = [ 'foregroundfull' ]
 
 " -----------------------
 "      KEYBINDINGS
