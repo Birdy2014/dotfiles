@@ -1,8 +1,6 @@
-[ -d "$HOME/.local/bin" ] && [[ $PATH == *"$HOME/.local/bin"* ]] || export PATH=$HOME/.local/bin:$PATH
-
-HISTFILE=~/.zsh_history
-HISTSIZE=1000
-SAVEHIST=1000
+HISTFILE=~/.config/zsh/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
 
 autoload -Uz tetriscurses
 autoload -Uz edit-command-line
@@ -19,9 +17,6 @@ alias l='ls -lAh'
 alias tm='tmux attach || tmux new-session'
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 alias tetris=tetriscurses
-
-export EDITOR=nvim
-export ANDROID_HOME=~/Android/Sdk
 
 ## VI-Mode ##
 bindkey -v
