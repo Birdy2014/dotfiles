@@ -37,6 +37,13 @@ function! s:show_documentation()
 endfunction
 
 " -----------------------
+"        AUTOCMDS
+" -----------------------
+
+" Remove trailing spaces
+autocmd BufWritePre * %s/\s\+$//e
+
+" -----------------------
 "     CONFIGURATION
 " -----------------------
 " NVIM
@@ -77,14 +84,22 @@ let g:Hexokinase_highlighters = [ 'foregroundfull' ]
 " -----------------------
 let mapleader=" "
 " BUFFERS
-nnoremap <Leader>bd       :bd<CR>
-nnoremap <Leader>bb       :enew<CR>
-nnoremap <silent> <c-j>   :bn<CR>
-nnoremap <silent> <c-k>   :bp<CR>
+nnoremap <Leader>d        :bd<CR>
+nnoremap <Leader>D        :bd!<CR>
+nnoremap <Leader>b        :enew<CR>
+nnoremap <silent> <m-j>   :bn<CR>
+nnoremap <silent> <m-k>   :bp<CR>
+" TABS
+nnoremap <silent> <m-h>   :tabprevious<CR>
+nnoremap <silent> <m-l>   :tabnext<CR>
 " SPLITS
-nnoremap <Leader>sl       :vs<CR>
+nnoremap <Leader>sh       :vs<CR>
 nnoremap <Leader>sj       :sp<CR>
+nnoremap <Leader>sk       :sp<CR>
+nnoremap <Leader>sl       :vs<CR>
 nnoremap <silent> <c-h>   <c-w>h
+nnoremap <silent> <c-j>   <c-w>j
+nnoremap <silent> <c-k>   <c-w>k
 nnoremap <silent> <c-l>   <c-w>l
 " NERDTREE
 nnoremap <silent> <c-n>   :NERDTreeToggle<CR>
