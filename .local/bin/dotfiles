@@ -7,11 +7,13 @@ pkglist=(
 
     # desktop
     "xorg-server"
-    "picom"
-    "lightdm"
-    "lightdm-gtk-greeter"
-    "light-locker"
     "xorg-xsetroot"
+    "xorg-xrdb"
+    "xorg-xinit"
+    "picom"
+    "xss-lock"
+    "slock"
+    "pulseaudio"
 
     # other applications
     "neovim"
@@ -24,12 +26,13 @@ pkglist=(
     "python-pip"
     "clang"
     "ctags"
+    "ueberzug"
 )
 
 aurpkgs=(
-    "python-ueberzug"
     "nerd-fonts-mononoki"
     "zsh-theme-minimal"
+    "matcha-gtk-theme"
 )
 
 install_git() {

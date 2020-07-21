@@ -1,4 +1,5 @@
 Xcursor.theme: capitaine-cursors
+Xft.dpi: 96
 
 !! Appearance
 urxvt.termName: rxvt-unicode
