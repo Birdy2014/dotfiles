@@ -1,5 +1,5 @@
 # Maintainer: Moritz Vogel <moritv7@gmail.com>
-pkgname=st-birdy2014
+pkgname=st-birdy2014-git
 pkgver=1.0
 pkgrel=1
 pkgdesc="My fork of the simple terminal by suckless"
@@ -31,4 +31,9 @@ build() {
 package() {
 	cd st
 	make DESTDIR="$pkgdir/" PREFIX="/usr" install
+}
+
+pkgver() {
+    cd st
+    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
