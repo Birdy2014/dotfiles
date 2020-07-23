@@ -24,6 +24,9 @@ bindkey -v
 # Edit line in vim using space
 bindkey -M vicmd ' ' edit-command-line
 
+# Delete chars with backspace
+bindkey -v '^?' backward-delete-char
+
 # Change cursor shape for different vi modes.
 zle-keymap-select() {
     if [[ ${KEYMAP} == vicmd ]] || [[ $1 = 'block' ]]; then
@@ -36,6 +39,7 @@ zle -N zle-keymap-select
 
 echo -ne '\e[5 q' # Use beam shape cursor on startup.
 precmd() { echo -ne '\e[5 q' ;} # Use beam shape cursor for each new prompt.
+preexec() { echo -ne '\e[5 q' ;} # beam shape cursor after prompt
 
 # Theme
 MNML_INFOLN=(mnml_err mnml_jobs mnml_uhp)
