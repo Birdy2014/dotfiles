@@ -9,7 +9,7 @@ fi
 
 picom &
 xss-lock slock &
-dwm-statusbar timer
+dwm-statusbar start
 [ -f ~/.fehbg ] && ~/.fehbg
 [ -f ~/.Xresources ] && xrdb ~/.Xresources
 [ -f ~/.xprofile ] && source ~/.xprofile

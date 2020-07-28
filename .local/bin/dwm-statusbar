@@ -1,5 +1,8 @@
 #!/usr/bin/sh
 
+CACHEDIR=${XDG_CACHE_HOME:-$HOME/.cache/scripts/dwm-statusbar}
+mkdir -p $CACHEDIR
+
 get_time() {
     echo "$(date "+%a %d %b %H:%M")"
 }
@@ -40,23 +43,43 @@ get_wifi() {
     echo $WIFI
 }
 
+update_network() {
+    local sum=0
+    for arg; do
+        read -r i < "$arg"
+        sum=$(( sum + i ))
+    done
+    local time=$(date +%s)
+    local cache=$CACHEDIR/${1##*/}
+    local oldsum=$(sed -n 1p $cache)
+    local oldtime=$(sed -n 2p $cache)
+    printf '%d\n%d' $sum $time > $cache
+    printf '%dk' $(( ( (sum - oldsum) / (time - oldtime) ) / 1042 ))
+}
+
+get_network() {
+    local rx=$(update_network /sys/class/net/*/statistics/rx_bytes)
+    local tx=$(update_network /sys/class/net/*/statistics/tx_bytes)
+    echo "🔻 $rx 🔺 $tx"
+}
+
 update_statusbar() {
     if [ "$device" = "laptop" ]; then
-        xsetroot -name "$(get_wifi) | $(get_battery) | $(get_volume) | $(get_time)"
+        xsetroot -name "$(get_wifi) | $(get_network) | $(get_battery) | $(get_volume) | $(get_time)"
     else
-        xsetroot -name "$(get_volume) | $(get_time)"
+        xsetroot -name "$(get_network) | $(get_volume) | $(get_time)"
     fi
 }
 
 timer() {
     while true; do
         update_statusbar
-        sleep 1m
+        sleep 10s
     done
 }
 
 case $1 in
     refresh) update_statusbar;;
-    timer) [ $(ps -e | grep $(basename $0) | wc -l) -ge 3 ] || timer &;;
+    start) [ $(ps -e | grep $(basename $0) | wc -l) -ge 3 ] || timer &;;
     stop) killall $(basename $0)
 esac
