@@ -1,4 +1,12 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
+
+# use bash builtin sleep
+if [ -f /usr/lib/bash/sleep ]; then
+    enable -f /usr/lib/bash/sleep sleep
+    SLEEP='builtin sleep'
+else
+    SLEEP='sleep'
+fi
 
 CACHEDIR=${XDG_CACHE_HOME:-$HOME/.cache/scripts/dwm-statusbar}
 mkdir -p $CACHEDIR
@@ -74,7 +82,7 @@ update_statusbar() {
 timer() {
     while true; do
         update_statusbar
-        sleep 10s
+        $SLEEP 10
     done
 }
 
