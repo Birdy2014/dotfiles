@@ -23,6 +23,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'unblevable/quick-scope'
     Plug 'vimwiki/vimwiki'
     Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
+    Plug 'christoomey/vim-tmux-navigator'
 call plug#end()
 
 " -----------------------
@@ -83,6 +84,7 @@ let g:Hexokinase_highlighters = [ 'foregroundfull' ]
 "      KEYBINDINGS
 " -----------------------
 let mapleader=" "
+nmap Y y$
 " BUFFERS
 nnoremap <Leader>d        :bd<CR>
 nnoremap <Leader>D        :bd!<CR>
@@ -97,10 +99,6 @@ nnoremap <Leader>sh       :vs<CR>
 nnoremap <Leader>sj       :sp<CR>
 nnoremap <Leader>sk       :sp<CR>
 nnoremap <Leader>sl       :vs<CR>
-nnoremap <silent> <c-h>   <c-w>h
-nnoremap <silent> <c-j>   <c-w>j
-nnoremap <silent> <c-k>   <c-w>k
-nnoremap <silent> <c-l>   <c-w>l
 " NERDTREE
 nnoremap <silent> <c-n>   :NERDTreeToggle<CR>
 " TERMINAL
