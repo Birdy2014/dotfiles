@@ -79,7 +79,7 @@ update_statusbar() {
     fi
 }
 
-timer() {
+loop() {
     while true; do
         update_statusbar
         $SLEEP 10
@@ -88,6 +88,6 @@ timer() {
 
 case $1 in
     refresh) update_statusbar;;
-    start) [ $(ps -e | grep $(basename $0) | wc -l) -ge 3 ] || timer &;;
-    stop) killall $(basename $0)
+    start) [ -f $CACHEDIR/pidfile ] && ps $(< $CACHEDIR/pidfile) > /dev/null && echo "dwm-statusbar is already running" || (loop & echo $! > $CACHEDIR/pidfile);;
+    stop) [ -f $CACHEDIR/pidfile ] && (kill $(< $CACHEDIR/pidfile); rm $CACHEDIR/pidfile) || echo "dwm-statusbar is not running";;
 esac
