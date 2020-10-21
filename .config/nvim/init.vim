@@ -18,6 +18,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'mhinz/vim-signify'
     Plug 'junegunn/fzf.vim'
     Plug 'ryanoasis/vim-devicons'
+    Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
     Plug 'neoclide/coc.nvim', {'branch': 'release'}
     Plug 'alvan/vim-closetag'
     Plug 'unblevable/quick-scope'
@@ -65,6 +66,9 @@ command! -bang -register Bclose call s:bclose(<q-bang>)
 
 " Remove trailing spaces
 autocmd BufWritePre * %s/\s\+$//e
+
+" Enter insert mode when navigating to a terminal
+autocmd BufWinEnter,WinEnter term://* startinsert
 
 " -----------------------
 "     CONFIGURATION
@@ -123,11 +127,16 @@ nnoremap <Leader>sl       :vs<CR>
 " NERDTREE
 nnoremap <silent> <c-n>   :NERDTreeToggle<CR>
 " TERMINAL
-tnoremap <Esc>            <C-\><C-n>
-nnoremap <Leader>t        :new<CR>:term<CR>
+tnoremap <C-h>            <C-\><C-n>:TmuxNavigateLeft<CR>
+tnoremap <C-j>            <C-\><C-n>:TmuxNavigateDown<CR>
+tnoremap <C-k>            <C-\><C-n>:TmuxNavigateUp<CR>
+tnoremap <C-l>            <C-\><C-n>:TmuxNavigateRight<CR>
+tnoremap <Leader>d        <C-\><C-n>:bd!<CR>
+nnoremap <Leader>t        :sp<CR>:resize 10<CR>:term<CR>i
 " WHICH-KEY
 nnoremap <silent><leader> :WhichKey '<Space>'<CR>
 " FZF
 nnoremap <Leader>f        :Files<CR>
 " COC
 nnoremap <silent> K :call <SID>show_documentation()<CR>
+
