@@ -47,7 +47,7 @@ get_battery() {
 
 get_connections() {
     local connections="$(nmcli -g type,name connection show --active)"
-    local wifi=$(echo "$connections" | awk -F : '$1 ~ /wifi/ {print $2}')
+    local wifi=$(echo "$connections" | awk -F : '$1 ~ /wireless/ {print $2}')
     local ethernet=$(echo "$connections" | awk -F : '$1 ~ /ethernet/ {print "Connected"}')
     local vpn=$(echo "$connections" | awk -F : '$1 ~ /vpn/ {print $2}')
     local out
@@ -78,7 +78,11 @@ get_network() {
 }
 
 update_statusbar() {
-    xsetroot -name "$(get_connections) | $(get_network) | $(get_battery) | $(get_volume) | $(get_time)"
+    if [ "$device" = "laptop" ]; then
+        xsetroot -name "$(get_connections) | $(get_network) | $(get_battery) | $(get_volume) | $(get_time)"
+    else
+        xsetroot -name "$(get_cyberpunk) | $(get_connections) | $(get_network) | $(get_volume) | $(get_time)"
+    fi
 }
 
 loop() {
