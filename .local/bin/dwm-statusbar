@@ -8,7 +8,7 @@ else
     SLEEP='sleep'
 fi
 
-CACHEDIR=${XDG_CACHE_HOME:-$HOME/.cache/scripts/dwm-statusbar}
+CACHEDIR=${XDG_RUNTIME_DIR:-/tmp}/scripts/dwm-statusbar
 mkdir -p $CACHEDIR
 
 get_time() {
@@ -45,10 +45,16 @@ get_battery() {
     fi
 }
 
-get_wifi() {
-    WIFI="$(nmcli -g NAME connection show --active || echo '')"
-    [ "$WIFI" = "" ] && WIFI="not connected"
-    echo $WIFI
+get_connections() {
+    local connections="$(nmcli -g type,name connection show --active)"
+    local wifi=$(echo "$connections" | awk -F : '$1 ~ /wifi/ {print $2}')
+    local ethernet=$(echo "$connections" | awk -F : '$1 ~ /ethernet/ {print "Connected"}')
+    local vpn=$(echo "$connections" | awk -F : '$1 ~ /vpn/ {print $2}')
+    local out
+    for i in wifi ethernet vpn; do
+        [ -z "${!i}" ] || out="$out | $i: ${!i}"
+    done
+    [ -z "$out" ] && echo 'Not Connected' || echo ${out:2}
 }
 
 update_network() {
@@ -72,17 +78,13 @@ get_network() {
 }
 
 update_statusbar() {
-    if [ "$device" = "laptop" ]; then
-        xsetroot -name "$(get_wifi) | $(get_network) | $(get_battery) | $(get_volume) | $(get_time)"
-    else
-        xsetroot -name "$(get_network) | $(get_volume) | $(get_time)"
-    fi
+    xsetroot -name "$(get_connections) | $(get_network) | $(get_battery) | $(get_volume) | $(get_time)"
 }
 
 loop() {
     while true; do
         update_statusbar
-        $SLEEP 10
+        $SLEEP 5
     done
 }
 
