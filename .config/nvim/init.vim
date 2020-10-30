@@ -25,6 +25,8 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'vimwiki/vimwiki'
     Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
     Plug 'christoomey/vim-tmux-navigator'
+    Plug 'tpope/vim-fugitive'
+    Plug 'Yggdroot/indentLine'
 call plug#end()
 
 " -----------------------
@@ -70,6 +72,11 @@ autocmd BufWritePre * %s/\s\+$//e
 " Enter insert mode when navigating to a terminal
 autocmd BufWinEnter,WinEnter term://* startinsert
 
+if $TERM == "st-256color"
+    " Set transparent background after plugins are loaded
+    autocmd vimenter * hi Normal guibg=NONE ctermbg=NONE
+endif
+
 " -----------------------
 "     CONFIGURATION
 " -----------------------
@@ -87,6 +94,7 @@ set timeoutlen=500
 set spelllang=en,de
 set noshowmode
 set termguicolors
+set guifont=Mononoki\ Nerd\ Font:14
 colorscheme gruvbox
 " NERDTREE
 let g:NERDTreeWinPos = "right"
