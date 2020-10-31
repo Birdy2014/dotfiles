@@ -119,32 +119,33 @@ let g:Hexokinase_highlighters = [ 'foregroundfull' ]
 let mapleader=" "
 nmap Y y$
 " BUFFERS
-nnoremap <Leader>d        :Bclose<CR>
-nnoremap <Leader>D        :Bclose!<CR>
-nnoremap <Leader>b        :enew<CR>
-nnoremap <silent> <m-j>   :bn<CR>
-nnoremap <silent> <m-k>   :bp<CR>
+nnoremap <silent> <c-q>        :q<CR>
+nnoremap <silent> <leader>d    :Bclose<CR>
+nnoremap <silent> <leader>D    :Bclose!<CR>
+nnoremap <silent> <leader>b    :enew<CR>
+nnoremap <silent> <m-j>        :bn<CR>
+nnoremap <silent> <m-k>        :bp<CR>
 " TABS
-nnoremap <silent> <m-h>   :tabprevious<CR>
-nnoremap <silent> <m-l>   :tabnext<CR>
+nnoremap <silent> <m-h>        :tabprevious<CR>
+nnoremap <silent> <m-l>        :tabnext<CR>
 " SPLITS
-nnoremap <Leader>sh       :vs<CR>
-nnoremap <Leader>sj       :sp<CR>
-nnoremap <Leader>sk       :sp<CR>
-nnoremap <Leader>sl       :vs<CR>
+nnoremap <silent> <leader>sh   :vs<CR>
+nnoremap <silent> <leader>sj   :sp<CR>
+nnoremap <silent> <leader>sk   :sp<CR>
+nnoremap <silent> <leader>sl   :vs<CR>
 " NERDTREE
-nnoremap <silent> <c-n>   :NERDTreeToggle<CR>
+nnoremap <silent> <c-n>        :NERDTreeToggle<CR>
 " TERMINAL
-tnoremap <C-h>            <C-\><C-n>:TmuxNavigateLeft<CR>
-tnoremap <C-j>            <C-\><C-n>:TmuxNavigateDown<CR>
-tnoremap <C-k>            <C-\><C-n>:TmuxNavigateUp<CR>
-tnoremap <C-l>            <C-\><C-n>:TmuxNavigateRight<CR>
-tnoremap <Leader>d        <C-\><C-n>:bd!<CR>
-nnoremap <Leader>t        :sp<CR>:resize 10<CR>:term<CR>i
+tnoremap <silent> <C-h>        <C-\><C-n>:TmuxNavigateLeft<CR>
+tnoremap <silent> <C-j>        <C-\><C-n>:TmuxNavigateDown<CR>
+tnoremap <silent> <C-k>        <C-\><C-n>:TmuxNavigateUp<CR>
+tnoremap <silent> <C-l>        <C-\><C-n>:TmuxNavigateRight<CR>
+tnoremap <silent> <c-q>        <C-\><C-n>:bd!<CR>
+nnoremap <silent> <leader>t    :sp<CR>:resize 10<CR>:term<CR>:set nobuflisted<CR>i
 " WHICH-KEY
-nnoremap <silent><leader> :WhichKey '<Space>'<CR>
+nnoremap <silent> <leader>     :WhichKey '<Space>'<CR>
 " FZF
-nnoremap <Leader>f        :Files<CR>
+nnoremap <silent> <leader>f    :Files<CR>
 " COC
-nnoremap <silent> K :call <SID>show_documentation()<CR>
+nnoremap <silent> K            :call <SID>show_documentation()<CR>
 
