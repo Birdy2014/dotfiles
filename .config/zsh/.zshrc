@@ -1,7 +1,17 @@
+# History
 HISTFILE=~/.config/zsh/.zsh_history
-HISTSIZE=10000
-SAVEHIST=10000
+HISTSIZE=100000
+SAVEHIST=100000
 
+setopt extended_history
+setopt inc_append_history
+setopt hist_ignore_all_dups
+setopt hist_save_no_dups
+setopt hist_reduce_blanks
+setopt hist_verify
+setopt hist_ignore_space
+
+# autoload
 autoload -Uz tetriscurses
 autoload -Uz edit-command-line
 autoload -Uz compinit
@@ -14,12 +24,13 @@ zstyle ':completion:*' menu select
 # Aliases
 alias ls='ls --color=auto'
 alias l='ls -lAh'
-alias tm='tmux attach || tmux new-session'
+alias tm='tmux new-session -A -s main'
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 alias tetris=tetriscurses
 
 ## VI-Mode ##
 bindkey -v
+KEYTIMEOUT=1
 
 # Edit line in vim using space
 bindkey -M vicmd ' ' edit-command-line
