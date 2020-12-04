@@ -21,12 +21,12 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
     Plug 'neoclide/coc.nvim', {'branch': 'release'}
     Plug 'alvan/vim-closetag'
-    Plug 'unblevable/quick-scope'
     Plug 'vimwiki/vimwiki'
     Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
     Plug 'christoomey/vim-tmux-navigator'
     Plug 'tpope/vim-fugitive'
     Plug 'Yggdroot/indentLine'
+    Plug 'justinmk/vim-sneak'
 call plug#end()
 
 " -----------------------
@@ -95,6 +95,7 @@ set spelllang=en,de
 set noshowmode
 set termguicolors
 set guifont=Mononoki\ Nerd\ Font:14
+set smartindent
 colorscheme gruvbox
 " NERDTREE
 let g:NERDTreeWinPos = "right"
@@ -118,6 +119,7 @@ let g:Hexokinase_highlighters = [ 'foregroundfull' ]
 " -----------------------
 let mapleader=" "
 nmap Y y$
+nnoremap <silent> <esc>        :noh<CR>
 " BUFFERS
 nnoremap <silent> <c-q>        :q<CR>
 nnoremap <silent> <leader>d    :Bclose<CR>
