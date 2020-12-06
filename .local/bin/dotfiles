@@ -12,21 +12,26 @@ pkglist=(
     "xorg-xinit"
     "picom"
     "xss-lock"
-    "slock"
     "pulseaudio"
+    "dunst"
 
     # other applications
     "neovim"
+    "xclip"
+    "nodejs"
     "python-pynvim"
     "firefox"
     "ranger"
     "zathura"
+    "zathura-pdf-mupdf"
     "git"
     "sudo"
     "python-pip"
     "clang"
     "ctags"
     "ueberzug"
+    "highlight"
+    "fzf"
 )
 
 aurpkgs=(
@@ -67,8 +72,7 @@ install_packages() {
 
     # install custom packages
     [ -d ~/pkgs ] && {
-        cd ~/pkgs
-        for pkgname in *; do
+        for pkgname in st slock dwm; do
             [ -d "/tmp/$pkgname" ] && rm -rf "/tmp/$pkgname"
             mkdir /tmp/$pkgname
             cp ~/pkgs/$pkgname /tmp/$pkgname/PKGBUILD
