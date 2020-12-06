@@ -27,6 +27,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'tpope/vim-fugitive'
     Plug 'Yggdroot/indentLine'
     Plug 'justinmk/vim-sneak'
+    Plug 'sheerun/vim-polyglot'
 call plug#end()
 
 " -----------------------
