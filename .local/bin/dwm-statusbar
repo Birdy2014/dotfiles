@@ -16,33 +16,40 @@ get_time() {
 }
 
 get_volume() {
+    local out
     if [ $(pamixer --get-mute) = true ]; then
-        echo "🔈"
+        out="🔈"
     else
-        echo "🔊 $(pamixer --get-volume)"
+        out="🔊 $(pamixer --get-volume)"
     fi
+    echo -n "$out | "
 }
 
 get_battery() {
-    BATTERY_STATUS=$(cat /sys/class/power_supply/BAT?/status)
-    BATTERY_CHARGE=$(cat /sys/class/power_supply/BAT?/capacity)
-    if [ $BATTERY_STATUS = Discharging ]; then
-        if [ $BATTERY_CHARGE -lt 10 ]; then
-            echo "  $BATTERY_CHARGE"
-        elif [ $BATTERY_CHARGE -lt 25 ]; then
-            echo "  $BATTERY_CHARGE"
-        elif [ $BATTERY_CHARGE -lt 50 ]; then
-            echo "  $BATTERY_CHARGE"
-        elif [ $BATTERY_CHARGE -lt 75 ]; then
-            echo "  $BATTERY_CHARGE"
+    local out
+    local battery_charge=0
+    local battery_status_arr=( /sys/class/power_supply/BAT?/status )
+    [[ "$battery_status_arr" == *'?'* ]] && exit
+    local battery_status=$(cat ${battery_status_arr[0]})
+    for path in /sys/class/power_supply/BAT?/capacity; do
+        battery_charge=$(( $battery_charge + $(cat path) ))
+    done
+    if [ "$battery_status" = Discharging ]; then
+        if [ "$battery_charge" -lt 10 ]; then
+            out="  $battery_charge"
+        elif [ "$battery_charge" -lt 25 ]; then
+            out="  $battery_charge"
+        elif [ "$battery_charge" -lt 50 ]; then
+            out="  $battery_charge"
+        elif [ "$battery_charge" -lt 75 ]; then
+            out="  $battery_charge"
         else
-            echo "  $BATTERY_CHARGE"
+            out="  $battery_charge"
         fi
-    elif [ $BATTERY_STATUS = Charging ]; then
-        echo " $BATTERY_CHARGE"
-    else
-        echo "ERR"
+    elif [ "$battery_status" = Charging ]; then
+        out=" $battery_charge"
     fi
+    echo -n "$out | "
 }
 
 get_connections() {
@@ -54,7 +61,8 @@ get_connections() {
     for i in wifi ethernet vpn; do
         [ -z "${!i}" ] || out="$out | $i: ${!i}"
     done
-    [ -z "$out" ] && echo 'Not Connected' || echo ${out:2}
+    [ -z "$out" ] && out='Not Connected' || out="${out:3}"
+    echo -n "$out | "
 }
 
 update_network() {
@@ -74,15 +82,22 @@ update_network() {
 get_network() {
     local rx=$(update_network /sys/class/net/*/statistics/rx_bytes)
     local tx=$(update_network /sys/class/net/*/statistics/tx_bytes)
-    echo "🔻 $rx 🔺 $tx"
+    printf '🔻 %5s 🔺 %5s | ' "$rx" "$tx"
+}
+
+get_calendar() {
+    local out
+    which khal &> /dev/null || exit
+    out="$(khal list now $(date -I) 23:59 --day-format '' --format '{start-style} {title}' | sed -n 1p)"
+    echo -n "$out | "
 }
 
 update_statusbar() {
-    if [ "$device" = "laptop" ]; then
-        xsetroot -name "$(get_connections) | $(get_network) | $(get_battery) | $(get_volume) | $(get_time)"
-    else
-        xsetroot -name "$(get_cyberpunk) | $(get_connections) | $(get_network) | $(get_volume) | $(get_time)"
-    fi
+    local statusbar_text
+    for func in get_calendar get_connections get_network get_battery get_volume get_time; do
+        statusbar_text="${statusbar_text}$($func)"
+    done
+    xsetroot -name "$statusbar_text"
 }
 
 loop() {
