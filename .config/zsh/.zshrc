@@ -1,5 +1,6 @@
 # History
-HISTFILE=~/.config/zsh/.zsh_history
+HISTORY_BASE="$HOME/.config/zsh/history" # local history
+HISTFILE="$HOME/.config/zsh/.zsh_history" # global history
 HISTSIZE=100000
 SAVEHIST=100000
 
@@ -55,7 +56,17 @@ preexec() { echo -ne '\e[5 q' ;} # beam shape cursor after prompt
 # Theme
 MNML_INFOLN=(mnml_err mnml_jobs mnml_uhp)
 MNML_MAGICENTER=()
-source /usr/share/zsh/plugins/theme-minimal/minimal.zsh
 
 # Plugins
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+[ ! -f ~/.config/zsh/antigen.zsh ] && curl -L git.io/antigen > ~/.config/zsh/antigen.zsh
+typeset -a ANTIGEN_CHECK_FILES=(${ZDOTDIR:-~}/.zshrc ${ZDOTDIR:-~}/antigen.zsh)
+source $ZDOTDIR/antigen.zsh
+
+antigen bundle zsh-users/zsh-syntax-highlighting
+antigen bundle zsh-users/zsh-autosuggestions
+antigen bundle subnixr/minimal
+antigen bundle jimhester/per-directory-history
+
+antigen apply
+
+ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=buffer-empty # workaround for autosuggestion not disappearing with subnixr/minimal
