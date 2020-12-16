@@ -18,9 +18,11 @@ get_time() {
 get_volume() {
     local out
     if [ $(pamixer --get-mute) = true ]; then
-        out="🔈"
+        out=" "
     else
-        out="🔊 $(pamixer --get-volume)"
+        local vol="$(pamixer --get-volume)"
+        [ "$vol" -ge 50 ] && out=" $(pamixer --get-volume)"
+        [ "$vol" -lt 50 ] && out=" $(pamixer --get-volume)"
     fi
     echo -n "$out | "
 }
@@ -76,13 +78,17 @@ update_network() {
     local oldsum=$(sed -n 1p $cache)
     local oldtime=$(sed -n 2p $cache)
     printf '%d\n%d' $sum $time > $cache
-    printf '%dk' $(( ( (sum - oldsum) / (time - oldtime) ) / 1042 ))
+    if [ $(( time - oldtime )) -eq 0 ]; then
+        echo -n 0k
+    else
+        printf '%dk' $(( ( (sum - oldsum) / (time - oldtime) ) / 1042 ))
+    fi
 }
 
 get_network() {
     local rx=$(update_network /sys/class/net/*/statistics/rx_bytes)
     local tx=$(update_network /sys/class/net/*/statistics/tx_bytes)
-    printf '🔻 %5s 🔺 %5s | ' "$rx" "$tx"
+    printf ' %5s  %5s | ' "$rx" "$tx"
 }
 
 get_calendar() {
