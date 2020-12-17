@@ -34,7 +34,7 @@ get_battery() {
     [[ "$battery_status_arr" == *'?'* ]] && exit
     local battery_status=$(cat ${battery_status_arr[0]})
     for path in /sys/class/power_supply/BAT?/capacity; do
-        battery_charge=$(( $battery_charge + $(cat path) ))
+        battery_charge=$(( $battery_charge + $(cat $path) ))
     done
     if [ "$battery_status" = Discharging ]; then
         if [ "$battery_charge" -lt 10 ]; then
