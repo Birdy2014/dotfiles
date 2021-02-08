@@ -1,5 +1,0 @@
-{
-    "coc.preferences.colorSupport": false,
-    "python.jediEnabled": false,
-    "latex.build.onSave": true
-}

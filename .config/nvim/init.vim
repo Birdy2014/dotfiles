@@ -8,26 +8,35 @@ if ! filereadable(expand('~/.local/share/nvim/site/autoload/plug.vim'))
 endif
 
 call plug#begin(stdpath('data') . '/plugged')
-    Plug 'vim-airline/vim-airline'
+    " Theme / Statusbars / Visual
+    Plug 'kyazdani42/nvim-web-devicons'
     Plug 'morhetz/gruvbox'
-    Plug 'ervandew/supertab'
-    Plug 'preservim/nerdtree'
-    Plug 'Xuyuanp/nerdtree-git-plugin'
-    Plug 'mhinz/vim-startify'
-    Plug 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
-    Plug 'mhinz/vim-signify'
-    Plug 'junegunn/fzf.vim'
-    Plug 'ryanoasis/vim-devicons'
-    Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
-    Plug 'neoclide/coc.nvim', {'branch': 'release'}
-    Plug 'alvan/vim-closetag'
-    Plug 'vimwiki/vimwiki'
+    Plug 'machakann/vim-highlightedyank'
     Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
+    Plug 'hoob3rt/lualine.nvim'
+    Plug 'romgrk/barbar.nvim'
+    Plug 'ms-jpq/chadtree', {'branch': 'chad', 'do': 'python3 -m chadtree deps'}
+    Plug 'junegunn/vim-peekaboo'
+
+    " Navigation
     Plug 'christoomey/vim-tmux-navigator'
-    Plug 'tpope/vim-fugitive'
-    Plug 'Yggdroot/indentLine'
     Plug 'justinmk/vim-sneak'
+    Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+    Plug 'junegunn/fzf.vim'
+    Plug 'michaeljsmith/vim-indent-object'
+
+    " Coding
     Plug 'sheerun/vim-polyglot'
+    Plug 'neovim/nvim-lspconfig'
+    Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+    Plug 'nvim-lua/completion-nvim'
+    Plug 'mhinz/vim-signify'
+    Plug 'tpope/vim-fugitive'
+
+    " Other
+    Plug 'vimwiki/vimwiki'
+    Plug 'airblade/vim-rooter'
+    Plug 'simnalamburt/vim-mundo'
 call plug#end()
 
 " -----------------------
@@ -37,31 +46,9 @@ function! s:show_documentation()
   if (index(['vim','help'], &filetype) >= 0)
     execute 'h '.expand('<cword>')
   else
-    call CocAction('doHover')
+    lua vim.lsp.buf.hover()
   endif
 endfunction
-
-function! s:bclose(bang)
-    let btarget = bufnr('%')
-    if empty(a:bang) && getbufvar(btarget, '&modified')
-        echohl ErrorMsg
-        echomsg 'No write since last change'
-        echohl NONE
-        return
-    endif
-    let wnums = filter(range(1, winnr('$')), 'winbufnr(v:val) == btarget')
-    for wnr in wnums
-        let bcount = len(filter(range(1, bufnr('$')), 'buflisted(v:val)'))
-        execute wnr.'wincmd w'
-        if bcount < 2
-            execute 'enew'
-        else
-            execute 'bnext'
-        endif
-    endfor
-    execute 'bdelete'.a:bang.' '.btarget
-endfunction
-command! -bang -register Bclose call s:bclose(<q-bang>)
 
 " -----------------------
 "        AUTOCMDS
@@ -72,48 +59,114 @@ autocmd BufWritePre * %s/\s\+$//e
 
 " Enter insert mode when navigating to a terminal
 autocmd BufWinEnter,WinEnter term://* startinsert
+autocmd BufWinEnter,WinEnter toggleterm startinsert
 
-if $TERM == "st-256color"
-    " Set transparent background after plugins are loaded
-    autocmd vimenter * hi Normal guibg=NONE ctermbg=NONE
-endif
+" Autocompletion
+autocmd BufEnter * lua require'completion'.on_attach()
+
+" Exit Vim if CHADTree is the only window left.
+autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && &ft == 'CHADTree' | quit | endif
+
+" enable spell checking in vimwiki
+autocmd BufReadPost,BufNewFile *.wiki setlocal spell
+
+" Override python tabstop ftplugin (workaround so Treesitter doesn't break the indentation)
+autocmd BufEnter *.py setlocal tabstop=4
 
 " -----------------------
 "     CONFIGURATION
 " -----------------------
-" NVIM
+
 set hidden
 set number relativenumber
 set mouse=a
 set expandtab
-set smarttab
 set shiftwidth=4
 set tabstop=4
-set splitbelow
-set splitright
+set splitright splitbelow
 set timeoutlen=500
 set spelllang=en,de
 set noshowmode
 set termguicolors
-set guifont=Mononoki\ Nerd\ Font:14
-set smartindent
+set inccommand=nosplit
+set guifont=JetBrainsMono:12
 colorscheme gruvbox
-" NERDTREE
-let g:NERDTreeWinPos = "right"
-let NERDTreeAutoDeleteBuffer = 1
-let NERDTreeMinimalUI = 1
-" AIRLINE
-let g:airline_powerline_fonts = 1
-let g:airline#extensions#tabline#enabled = 1
+set undofile
+set undodir=~/.local/share/nvim/undo
+set switchbuf+=useopen
+
+" Hexokinase
+let g:Hexokinase_highlighters = [ 'foregroundfull' ]
+
+" Highlightedyank
+let g:highlightedyank_highlight_duration = 200
+
+" Lualine
+lua << EOF
+local lualine = require('lualine')
+lualine.theme = 'gruvbox'
+lualine.extensions = { 'fzf' }
+lualine.status()
+EOF
+
+" Barbar
+let bufferline = {}
+let bufferline.icons = v:true
+let bufferline.closable = v:false
+
 " FZF
 let g:fzf_preview_window = 'right:60%'
-" SUPERTAB
-let g:SuperTabMappingForward = '<s-tab>'
-let g:SuperTabMappingBackward = '<tab>'
-" QUICKSCOPE
-let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
-" HEXOKINASE
-let g:Hexokinase_highlighters = [ 'foregroundfull' ]
+let $FZF_DEFAULT_COMMAND = 'rg --files --hidden -g "!{node_modules/*,.git/*}"'
+
+" nvim-lspconfig
+lua << EOF
+local lspconfig = require('lspconfig')
+
+lspconfig.tsserver.setup{}
+
+lspconfig.clangd.setup{}
+
+lspconfig.pyright.setup{}
+
+lspconfig.texlab.setup{
+    settings = {
+        latex = {
+            build = {
+                executable = 'pdflatex',
+                onSave = true
+            }
+        }
+    }
+}
+EOF
+
+" nvim-treesitter
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+    ensure_installed = "maintained",
+    highlight = {
+        enable = true
+    },
+    indent = {
+        enable = true
+    }
+}
+EOF
+
+" completion-nvim
+set completeopt=menuone,noinsert,noselect
+set shortmess+=c
+
+" CHADTree
+let g:chadtree_settings = {}
+let g:chadtree_settings.keymap = {}
+let g:chadtree_settings.keymap.primary = [ '<enter>', 'o' ]
+
+" vim-mundo
+let g:mundo_right = 1
+
+" vim-rooter
+let g:rooter_patterns = [ '.git' ]
 
 " -----------------------
 "      KEYBINDINGS
@@ -121,34 +174,69 @@ let g:Hexokinase_highlighters = [ 'foregroundfull' ]
 let mapleader=" "
 nmap Y y$
 nnoremap <silent> <esc>        :noh<CR>
-" BUFFERS
-nnoremap <silent> <c-q>        :q<CR>
-nnoremap <silent> <leader>d    :Bclose<CR>
-nnoremap <silent> <leader>D    :Bclose!<CR>
-nnoremap <silent> <leader>b    :enew<CR>
-nnoremap <silent> <m-j>        :bn<CR>
-nnoremap <silent> <m-k>        :bp<CR>
-" TABS
-nnoremap <silent> <m-h>        :tabprevious<CR>
-nnoremap <silent> <m-l>        :tabnext<CR>
-" SPLITS
+" Buffers
+nnoremap <silent> <A-s>        :BufferPick<CR>
+
+nnoremap <silent> <Space>bd    :BufferOrderByDirectory<CR>
+nnoremap <silent> <Space>bl    :BufferOrderByLanguage<CR>
+
+nnoremap <silent> <A-k>        :BufferPrevious<CR>
+nnoremap <silent> <A-j>        :BufferNext<CR>
+
+nnoremap <silent> <A-<>        :BufferMovePrevious<CR>
+nnoremap <silent> <A->>        :BufferMoveNext<CR>
+
+nnoremap <silent> <A-1>        :BufferGoto 1<CR>
+nnoremap <silent> <A-2>        :BufferGoto 2<CR>
+nnoremap <silent> <A-3>        :BufferGoto 3<CR>
+nnoremap <silent> <A-4>        :BufferGoto 4<CR>
+nnoremap <silent> <A-5>        :BufferGoto 5<CR>
+nnoremap <silent> <A-6>        :BufferGoto 6<CR>
+nnoremap <silent> <A-7>        :BufferGoto 7<CR>
+nnoremap <silent> <A-8>        :BufferGoto 8<CR>
+nnoremap <silent> <A-9>        :BufferLast<CR>
+
+nnoremap <silent> <A-q>        :BufferClose<CR>
+
+" splits
 nnoremap <silent> <leader>sh   :vs<CR>
 nnoremap <silent> <leader>sj   :sp<CR>
 nnoremap <silent> <leader>sk   :sp<CR>
 nnoremap <silent> <leader>sl   :vs<CR>
-" NERDTREE
-nnoremap <silent> <c-n>        :NERDTreeToggle<CR>
-" TERMINAL
+
+" terminal
 tnoremap <silent> <C-h>        <C-\><C-n>:TmuxNavigateLeft<CR>
 tnoremap <silent> <C-j>        <C-\><C-n>:TmuxNavigateDown<CR>
 tnoremap <silent> <C-k>        <C-\><C-n>:TmuxNavigateUp<CR>
 tnoremap <silent> <C-l>        <C-\><C-n>:TmuxNavigateRight<CR>
-tnoremap <silent> <c-q>        <C-\><C-n>:bd!<CR>
-nnoremap <silent> <leader>t    :sp<CR>:resize 10<CR>:term<CR>:set nobuflisted<CR>i
-" WHICH-KEY
-nnoremap <silent> <leader>     :WhichKey '<Space>'<CR>
+tnoremap <expr><silent> <A-k>  (&buflisted == 1 ? '<C-\><C-n>:BufferPrevious<CR>' : '')
+tnoremap <expr><silent> <A-j>  (&buflisted == 1 ? '<C-\><C-n>:BufferNext<CR>' : '')
+tnoremap <expr><silent> <A-q>  (&buflisted == 1 ? '<C-\><C-n>:BufferClose!<CR>' : '<C-\><C-n>:bd!<CR>')
+nnoremap <expr><silent> <C-t>  (bufexists('toggleterm') == 1 ? ':sbuffer toggleterm<CR>' : ':sp<CR>:resize 10<CR>:term<CR>:set nobuflisted<CR>:file toggleterm<CR>i')
+tnoremap <expr><silent> <C-t>  (&buflisted == 1 ? '' : '<C-\><C-n>:bd!<CR>')
+
 " FZF
-nnoremap <silent> <leader>f    :Files<CR>
-" COC
+nnoremap <silent> <C-f>        :Files<CR>
+
+" LSP
+nnoremap <silent> gd           :lua vim.lsp.buf.declaration()<CR>
+nnoremap <silent> gD           :lua vim.lsp.buf.definition()<CR>
 nnoremap <silent> K            :call <SID>show_documentation()<CR>
 
+" completion-nvim
+inoremap <expr> <Tab>          pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab>        pumvisible() ? "\<C-p>" : "\<S-Tab>"
+
+inoremap <C-space>             <C-n>
+
+" CHADTree
+nnoremap <silent> <C-n>        :CHADopen<CR>
+
+" vim-mundo
+nnoremap <silent> U            :MundoToggle<CR>
+
+" other
+nnoremap <expr> k              (v:count == 0 ? 'gk' : 'k')
+nnoremap <expr> j              (v:count == 0 ? 'gj' : 'j')
+nnoremap Ö                     {
+nnoremap Ä                     }
