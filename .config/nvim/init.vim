@@ -32,6 +32,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'nvim-lua/completion-nvim'
     Plug 'mhinz/vim-signify'
     Plug 'tpope/vim-fugitive'
+    Plug 'sbdchd/neoformat'
 
     " Other
     Plug 'vimwiki/vimwiki'
@@ -48,6 +49,31 @@ function! s:show_documentation()
   else
     lua vim.lsp.buf.hover()
   endif
+endfunction
+
+function! s:save_session()
+    " Only save the session inside of a project
+    if isdirectory('.git')
+        " Close CHADTree
+        let buffers = filter(range(1, bufnr('$')), 'getbufvar(v:val, "&filetype") == "CHADTree"')
+        if !empty(buffers)
+            for b in buffers
+                execute 'bw! ' . b
+            endfor
+        endif
+        " Close toggleterm
+        bw! toggleterm
+        " Save session
+        mksession!
+    endif
+
+endfunction
+
+function! s:load_session()
+    if filereadable('Session.vim')
+        source Session.vim
+        CHADopen
+    endif
 endfunction
 
 " -----------------------
@@ -73,6 +99,19 @@ autocmd BufReadPost,BufNewFile *.wiki setlocal spell
 " Override python tabstop ftplugin (workaround so Treesitter doesn't break the indentation)
 autocmd BufEnter *.py setlocal tabstop=4
 
+" Session management
+augroup manage_session
+    autocmd!
+    autocmd VimEnter * nested call s:load_session()
+    autocmd VimLeavePre * call s:save_session()
+augroup END
+
+" Format code on save
+augroup fmt
+  autocmd!
+  autocmd BufWritePre * undojoin | Neoformat
+augroup END
+
 " -----------------------
 "     CONFIGURATION
 " -----------------------
@@ -94,6 +133,10 @@ colorscheme gruvbox
 set undofile
 set undodir=~/.local/share/nvim/undo
 set switchbuf+=useopen
+let g:vimsyn_embed = 'lPr'
+
+set list
+set listchars=tab:>-,trail:-,nbsp:+
 
 " Hexokinase
 let g:Hexokinase_highlighters = [ 'foregroundfull' ]
@@ -148,7 +191,7 @@ require'nvim-treesitter.configs'.setup {
         enable = true
     },
     indent = {
-        enable = true
+        enable = false -- Currently broken
     }
 }
 EOF
@@ -221,6 +264,7 @@ nnoremap <silent> <C-f>        :Files<CR>
 " LSP
 nnoremap <silent> gd           :lua vim.lsp.buf.declaration()<CR>
 nnoremap <silent> gD           :lua vim.lsp.buf.definition()<CR>
+nnoremap <silent> gF           :lua vim.lsp.buf.code_action()<CR>
 nnoremap <silent> K            :call <SID>show_documentation()<CR>
 
 " completion-nvim
