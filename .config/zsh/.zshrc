@@ -29,6 +29,11 @@ alias tm='tmux new-session -A -s main'
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 alias tetris=tetriscurses
 
+# Functions
+function set_terminal_title() {
+    echo -en "\e]2;$@\a"
+}
+
 ## VI-Mode ##
 bindkey -v
 KEYTIMEOUT=1
@@ -50,8 +55,15 @@ zle-keymap-select() {
 zle -N zle-keymap-select
 
 echo -ne '\e[5 q' # Use beam shape cursor on startup.
-precmd() { echo -ne '\e[5 q' ;} # Use beam shape cursor for each new prompt.
-preexec() { echo -ne '\e[5 q' ;} # beam shape cursor after prompt
+precmd() {
+    echo -ne '\e[5 q'; # Use beam shape cursor for each new prompt.
+    set_terminal_title zsh
+}
+
+preexec() {
+    echo -ne '\e[5 q'; # beam shape cursor after prompt
+    set_terminal_title "$1"
+}
 
 # Theme
 MNML_INFOLN=(mnml_err mnml_jobs mnml_uhp)
