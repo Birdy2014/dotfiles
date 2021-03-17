@@ -15,7 +15,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
     Plug 'hoob3rt/lualine.nvim'
     Plug 'romgrk/barbar.nvim'
-    Plug 'ms-jpq/chadtree', {'branch': 'chad', 'do': 'python3 -m chadtree deps'}
+    Plug 'kyazdani42/nvim-tree.lua'
     Plug 'junegunn/vim-peekaboo'
 
     " Navigation
@@ -44,35 +44,37 @@ call plug#end()
 "       FUNCTIONS
 " -----------------------
 function! s:show_documentation()
-  if (index(['vim','help'], &filetype) >= 0)
-    execute 'h '.expand('<cword>')
-  else
-    lua vim.lsp.buf.hover()
-  endif
+    if (index(['vim','help'], &filetype) >= 0)
+        execute 'h '.expand('<cword>')
+    else
+        lua vim.lsp.buf.hover()
+    endif
 endfunction
 
 function! s:save_session()
     " Only save the session inside of a project
     if isdirectory('.git')
-        " Close CHADTree
-        let buffers = filter(range(1, bufnr('$')), 'getbufvar(v:val, "&filetype") == "CHADTree"')
-        if !empty(buffers)
-            for b in buffers
-                execute 'bw! ' . b
-            endfor
-        endif
+        " Close nvim-tree.lua
+        NvimTreeClose
         " Close toggleterm
-        bw! toggleterm
+        if bufexists('toggleterm')
+            bw! toggleterm
+        endif
         " Save session
         mksession!
     endif
-
 endfunction
 
 function! s:load_session()
     if filereadable('Session.vim')
         source Session.vim
-        CHADopen
+        NvimTreeOpen
+    endif
+endfunction
+
+function! s:clang_format()
+    if filereadable('.clang-format') && executable('clang-format')
+        Neoformat clangformat
     endif
 endfunction
 
@@ -90,8 +92,8 @@ autocmd BufWinEnter,WinEnter toggleterm startinsert
 " Autocompletion
 autocmd BufEnter * lua require'completion'.on_attach()
 
-" Exit Vim if CHADTree is the only window left.
-autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && &ft == 'CHADTree' | quit | endif
+" Set cursorline for nvim-tree.lua
+autocmd FileType NvimTree setlocal cursorline
 
 " enable spell checking in vimwiki
 autocmd BufReadPost,BufNewFile *.wiki setlocal spell
@@ -109,7 +111,7 @@ augroup END
 " Format code on save
 augroup fmt
   autocmd!
-  autocmd BufWritePre * undojoin | Neoformat
+  autocmd BufWritePre *.h,*.c,*.cc,*.hpp,*.cpp undojoin | call s:clang_format()
 augroup END
 
 " -----------------------
@@ -147,9 +149,23 @@ let g:highlightedyank_highlight_duration = 200
 " Lualine
 lua << EOF
 local lualine = require('lualine')
-lualine.theme = 'gruvbox'
-lualine.extensions = { 'fzf' }
-lualine.status()
+lualine.setup{
+    options = {
+        theme = 'gruvbox',
+        section_separators = {},
+        component_separators = '|',
+        icons_enabled = true,
+    },
+    sections = {
+        lualine_a = { {'mode', upper = true} },
+        lualine_b = { {'branch', icon = ''}, { 'diff' } },
+        lualine_c = { { 'diagnostics', sources = { 'nvim_lsp' } }, {'filename', file_status = true} },
+        lualine_x = { 'encoding', 'fileformat', 'filetype' },
+        lualine_y = { 'progress' },
+        lualine_z = { 'location'  },
+    },
+    extensions = { 'fzf' }
+}
 EOF
 
 " Barbar
@@ -200,10 +216,10 @@ EOF
 set completeopt=menuone,noinsert,noselect
 set shortmess+=c
 
-" CHADTree
-let g:chadtree_settings = {}
-let g:chadtree_settings.keymap = {}
-let g:chadtree_settings.keymap.primary = [ '<enter>', 'o' ]
+" nvim-tree.lua
+let g:nvim_tree_auto_close = 1
+let g:nvim_tree_follow = 1
+let g:nvim_tree_git_hl = 1
 
 " vim-mundo
 let g:mundo_right = 1
@@ -273,8 +289,8 @@ inoremap <expr> <S-Tab>        pumvisible() ? "\<C-p>" : "\<S-Tab>"
 
 inoremap <C-space>             <C-n>
 
-" CHADTree
-nnoremap <silent> <C-n>        :CHADopen<CR>
+" nvim-tree.lua
+nnoremap <silent> <C-n>        :NvimTreeToggle<CR>
 
 " vim-mundo
 nnoremap <silent> U            :MundoToggle<CR>
