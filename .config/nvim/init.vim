@@ -10,7 +10,7 @@ endif
 call plug#begin(stdpath('data') . '/plugged')
     " Theme / Statusbars / Visual
     Plug 'kyazdani42/nvim-web-devicons'
-    Plug 'morhetz/gruvbox'
+    Plug 'gruvbox-community/gruvbox'
     Plug 'machakann/vim-highlightedyank'
     Plug 'rrethy/vim-hexokinase', { 'do': 'make hexokinase' }
     Plug 'hoob3rt/lualine.nvim'
@@ -29,7 +29,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'sheerun/vim-polyglot'
     Plug 'neovim/nvim-lspconfig'
     Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-    Plug 'nvim-lua/completion-nvim'
+    Plug 'hrsh7th/nvim-compe'
     Plug 'mhinz/vim-signify'
     Plug 'tpope/vim-fugitive'
     Plug 'sbdchd/neoformat'
@@ -43,14 +43,6 @@ call plug#end()
 " -----------------------
 "       FUNCTIONS
 " -----------------------
-function! s:show_documentation()
-    if (index(['vim','help'], &filetype) >= 0)
-        execute 'h '.expand('<cword>')
-    else
-        lua vim.lsp.buf.hover()
-    endif
-endfunction
-
 function! s:save_session()
     " Only save the session inside of a project
     if isdirectory('.git')
@@ -88,9 +80,6 @@ autocmd BufWritePre * %s/\s\+$//e
 " Enter insert mode when navigating to a terminal
 autocmd BufWinEnter,WinEnter term://* startinsert
 autocmd BufWinEnter,WinEnter toggleterm startinsert
-
-" Autocompletion
-autocmd BufEnter * lua require'completion'.on_attach()
 
 " Set cursorline for nvim-tree.lua
 autocmd FileType NvimTree setlocal cursorline
@@ -197,6 +186,10 @@ lspconfig.texlab.setup{
         }
     }
 }
+
+lspconfig.sumneko_lua.setup{
+    cmd = { 'lua-language-server' }
+}
 EOF
 
 " nvim-treesitter
@@ -212,9 +205,34 @@ require'nvim-treesitter.configs'.setup {
 }
 EOF
 
-" completion-nvim
-set completeopt=menuone,noinsert,noselect
+" nvim-compe
+set completeopt=menuone,noselect
 set shortmess+=c
+lua <<EOF
+require'compe'.setup {
+    enabled = true;
+    autocomplete = true;
+    debug = false;
+    min_length = 1;
+    preselect = 'disable';
+    throttle_time = 80;
+    source_timeout = 200;
+    incomplete_delay = 400;
+    max_abbr_width = 100;
+    max_kind_width = 100;
+    max_menu_width = 100;
+    documentation = true;
+
+    source = {
+        path = true;
+        buffer = true;
+        calc = true;
+        nvim_lsp = true;
+        nvim_lua = true;
+        vsnip = false;
+    };
+}
+EOF
 
 " nvim-tree.lua
 let g:nvim_tree_auto_close = 1
@@ -278,16 +296,19 @@ tnoremap <expr><silent> <C-t>  (&buflisted == 1 ? '' : '<C-\><C-n>:bd!<CR>')
 nnoremap <silent> <C-f>        :Files<CR>
 
 " LSP
+nnoremap <silent> gh           :lua vim.lsp.buf.references()<CR>
+vnoremap <silent> <leader>ca   :lua vim.lsp.buf.code_action()<CR>
+nnoremap <silent> K            :lua vim.lsp.buf.hover()<CR>
+nnoremap <silent> gr           :lua vim.lsp.buf.rename()<CR>
 nnoremap <silent> gd           :lua vim.lsp.buf.declaration()<CR>
 nnoremap <silent> gD           :lua vim.lsp.buf.definition()<CR>
-nnoremap <silent> gF           :lua vim.lsp.buf.code_action()<CR>
-nnoremap <silent> K            :call <SID>show_documentation()<CR>
 
-" completion-nvim
+" nvim-compe
+inoremap <silent><expr> <C-space> compe#complete()
 inoremap <expr> <Tab>          pumvisible() ? "\<C-n>" : "\<Tab>"
 inoremap <expr> <S-Tab>        pumvisible() ? "\<C-p>" : "\<S-Tab>"
-
-inoremap <C-space>             <C-n>
+inoremap <silent><expr> <CR>   compe#confirm('<CR>')
+inoremap <silent><expr> <C-e>  compe#close('<C-e>')
 
 " nvim-tree.lua
 nnoremap <silent> <C-n>        :NvimTreeToggle<CR>
