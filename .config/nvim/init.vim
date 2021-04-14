@@ -17,6 +17,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'romgrk/barbar.nvim'
     Plug 'kyazdani42/nvim-tree.lua'
     Plug 'junegunn/vim-peekaboo'
+    Plug 'akinsho/nvim-toggleterm.lua'
 
     " Navigation
     Plug 'christoomey/vim-tmux-navigator'
@@ -24,6 +25,7 @@ call plug#begin(stdpath('data') . '/plugged')
     Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
     Plug 'junegunn/fzf.vim'
     Plug 'michaeljsmith/vim-indent-object'
+    Plug 'nacro90/numb.nvim'
 
     " Coding
     Plug 'sheerun/vim-polyglot'
@@ -48,10 +50,10 @@ function! s:save_session()
     if isdirectory('.git')
         " Close nvim-tree.lua
         NvimTreeClose
+        " Close quickfix
+        ccl
         " Close toggleterm
-        if bufexists('toggleterm')
-            bw! toggleterm
-        endif
+        bw! toggleterm
         " Save session
         mksession!
     endif
@@ -60,13 +62,27 @@ endfunction
 function! s:load_session()
     if filereadable('Session.vim')
         source Session.vim
-        NvimTreeOpen
+        "NvimTreeOpen  - Currently broken
     endif
 endfunction
 
 function! s:clang_format()
     if filereadable('.clang-format') && executable('clang-format')
         Neoformat clangformat
+    endif
+endfunction
+
+let g:quickfix_buffer_number = -1
+function! s:QuickFixInit()
+    if &ft == 'qf'
+        wincmd L
+        vertical resize 40
+        setlocal nobuflisted
+        setlocal winfixwidth
+        let g:quickfix_buffer_number = bufnr()
+        nnoremap <buffer> <silent> j j<CR>:exe 'sbuffer ' g:quickfix_buffer_number<CR>
+        nnoremap <buffer> <silent> k k<CR>:exe 'sbuffer ' g:quickfix_buffer_number<CR>
+        wincmd =
     endif
 endfunction
 
@@ -79,7 +95,6 @@ autocmd BufWritePre * %s/\s\+$//e
 
 " Enter insert mode when navigating to a terminal
 autocmd BufWinEnter,WinEnter term://* startinsert
-autocmd BufWinEnter,WinEnter toggleterm startinsert
 
 " Set cursorline for nvim-tree.lua
 autocmd FileType NvimTree setlocal cursorline
@@ -89,6 +104,9 @@ autocmd BufReadPost,BufNewFile *.wiki setlocal spell
 
 " Override python tabstop ftplugin (workaround so Treesitter doesn't break the indentation)
 autocmd BufEnter *.py setlocal tabstop=4
+
+" QuickFix
+autocmd FileType qf call s:QuickFixInit()
 
 " Session management
 augroup manage_session
@@ -128,6 +146,9 @@ let g:vimsyn_embed = 'lPr'
 
 set list
 set listchars=tab:>-,trail:-,nbsp:+
+
+set eadirection=hor
+set equalalways
 
 " Hexokinase
 let g:Hexokinase_highlighters = [ 'foregroundfull' ]
@@ -238,12 +259,35 @@ EOF
 let g:nvim_tree_auto_close = 1
 let g:nvim_tree_follow = 1
 let g:nvim_tree_git_hl = 1
+let g:nvim_tree_lsp_diagnostics = 1
 
 " vim-mundo
 let g:mundo_right = 1
 
 " vim-rooter
 let g:rooter_patterns = [ '.git' ]
+
+" nvim-toggleterm
+lua <<EOF
+require"toggleterm".setup{
+    size = 15,
+    open_mapping = '<c-t>',
+    shade_filetypes = {},
+    shade_terminals = true,
+    shading_factor = '1',
+    start_in_insert = true,
+    persist_size = true,
+    direction = 'horizontal',
+}
+EOF
+
+" numb.nvim
+lua <<EOF
+require('numb').setup{
+   show_numbers = true,
+   show_cursorline = true
+}
+EOF
 
 " -----------------------
 "      KEYBINDINGS
@@ -289,15 +333,13 @@ tnoremap <silent> <C-l>        <C-\><C-n>:TmuxNavigateRight<CR>
 tnoremap <expr><silent> <A-k>  (&buflisted == 1 ? '<C-\><C-n>:BufferPrevious<CR>' : '')
 tnoremap <expr><silent> <A-j>  (&buflisted == 1 ? '<C-\><C-n>:BufferNext<CR>' : '')
 tnoremap <expr><silent> <A-q>  (&buflisted == 1 ? '<C-\><C-n>:BufferClose!<CR>' : '<C-\><C-n>:bd!<CR>')
-nnoremap <expr><silent> <C-t>  (bufexists('toggleterm') == 1 ? ':sbuffer toggleterm<CR>' : ':sp<CR>:resize 10<CR>:term<CR>:set nobuflisted<CR>:file toggleterm<CR>i')
-tnoremap <expr><silent> <C-t>  (&buflisted == 1 ? '' : '<C-\><C-n>:bd!<CR>')
 
 " FZF
 nnoremap <silent> <C-f>        :Files<CR>
 
 " LSP
 nnoremap <silent> gh           :lua vim.lsp.buf.references()<CR>
-vnoremap <silent> <leader>ca   :lua vim.lsp.buf.code_action()<CR>
+nnoremap <silent> <leader>ca   :lua vim.lsp.buf.code_action()<CR>
 nnoremap <silent> K            :lua vim.lsp.buf.hover()<CR>
 nnoremap <silent> gr           :lua vim.lsp.buf.rename()<CR>
 nnoremap <silent> gd           :lua vim.lsp.buf.declaration()<CR>
