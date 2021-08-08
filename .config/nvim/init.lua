@@ -126,7 +126,7 @@ vim.opt.title = true
 vim.opt.guifont = 'JetbrainsMono Nerd Font Mono:h11'
 vim.opt.background = 'dark'
 vim.opt.undofile = true
-vim.opt.undodir = '~/.local/share/nvim/undo'
+vim.opt.undodir = vim.fn.getenv('HOME') .. '/.local/share/nvim/undo'
 vim.opt.switchbuf:append('useopen')
 vim.opt.list = true
 vim.opt.listchars = 'tab:>-,trail:-,nbsp:+'
