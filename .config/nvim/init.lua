@@ -20,7 +20,6 @@ require('packer').startup(function()
     use { 'romgrk/barbar.nvim', requires = 'kyazdani42/nvim-web-devicons' }
     use { 'kyazdani42/nvim-tree.lua', requires = 'kyazdani42/nvim-web-devicons' }
     use 'akinsho/nvim-toggleterm.lua'
-    use 'tversteeg/registers.nvim'
     use 'glepnir/dashboard-nvim'
     use 'folke/which-key.nvim'
 
@@ -31,23 +30,26 @@ require('packer').startup(function()
     use 'nacro90/numb.nvim'
     use 'haya14busa/vim-asterisk'
     use { 'nvim-telescope/telescope.nvim', requires = { 'nvim-lua/popup.nvim', 'nvim-lua/plenary.nvim' } }
+    use { 'nvim-telescope/telescope-project.nvim', requires = 'nvim-telescope/telescope.nvim' }
 
     -- Coding
     use 'sheerun/vim-polyglot'
     use 'neovim/nvim-lspconfig'
-    use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
+    use { 'nvim-treesitter/nvim-treesitter', branch = '0.5-compat', run = ':TSUpdate' }
     use 'hrsh7th/nvim-compe'
     use { 'lewis6991/gitsigns.nvim', requires = 'nvim-lua/plenary.nvim' }
     use 'sbdchd/neoformat'
     use 'simrat39/symbols-outline.nvim'
-    use { 'sakhnik/nvim-gdb', run = ':!./install.sh' }
     use { 'TimUntersberger/neogit', requires = { 'nvim-lua/plenary.nvim', 'nvim-lua/popup.nvim', 'sindrets/diffview.nvim' } }
     use 'ray-x/lsp_signature.nvim'
+    use 'folke/trouble.nvim'
+    use 'folke/todo-comments.nvim'
+    use { 'nvim-treesitter/nvim-treesitter-textobjects', branch = '0.5-compat' }
 
     -- Other
     use 'vimwiki/vimwiki'
-    use 'airblade/vim-rooter'
     use 'simnalamburt/vim-mundo'
+    use { 'nvim-telescope/telescope-symbols.nvim', requires = 'nvim-telescope/telescope.nvim' }
 end)
 
 --- -----------------------
@@ -57,20 +59,6 @@ vim.cmd [[
 function! g:Clang_format()
     if &filetype == 'cpp' && filereadable('.clang-format') && executable('clang-format')
         Neoformat clangformat
-    endif
-endfunction
-
-let g:quickfix_buffer_number = -1
-function! g:QuickFixInit()
-    if &ft == 'qf'
-        wincmd L
-        vertical resize 40
-        setlocal nobuflisted
-        setlocal winfixwidth
-        let g:quickfix_buffer_number = bufnr()
-        nnoremap <buffer> <silent> j j<CR>:exe 'sbuffer ' g:quickfix_buffer_number<CR>
-        nnoremap <buffer> <silent> k k<CR>:exe 'sbuffer ' g:quickfix_buffer_number<CR>
-        wincmd =
     endif
 endfunction
 ]]
@@ -94,9 +82,6 @@ vim.cmd('autocmd FileType vimwiki setlocal spell')
 --- Override python tabstop ftplugin (workaround so Treesitter doesn't break the indentation)
 vim.cmd('autocmd BufEnter *.py setlocal tabstop=4')
 
---- QuickFix
-vim.cmd('autocmd FileType qf call s:QuickFixInit()')
-
 --- Format code on save
 vim.cmd [[
 augroup fmt
@@ -104,6 +89,9 @@ augroup fmt
     autocmd BufWritePre * call g:Clang_format()
 augroup END
 ]]
+
+-- Vimwiki hide superscript
+vim.cmd('autocmd FileType vimwiki hi! link VimwikiSuperScript Normal')
 
 --- -----------------------
 ---     CONFIGURATION
@@ -162,18 +150,17 @@ lualine.setup{
 }
 
 --- Barbar
-vim.cmd [[
-let bufferline = {}
-let bufferline.icons = v:true
-let bufferline.closable = v:false
-]]
+vim.g.bufferline = {
+    closable = false
+}
 
 --- nvim-lspconfig
 local lspconfig = require('lspconfig')
 
 lspconfig.tsserver.setup{}
 
-lspconfig.clangd.setup{}
+--lspconfig.clangd.setup{}
+lspconfig.ccls.setup{}
 
 lspconfig.pyright.setup{}
 
@@ -250,9 +237,6 @@ vim.cmd("autocmd BufWinEnter NvimTree setlocal cursorline")
 --- vim-mundo
 vim.g.mundo_right = 1
 
---- vim-rooter
-vim.g.rooter_patterns = { '.git' }
-
 --- nvim-toggleterm
 require("toggleterm").setup{
     size = 15,
@@ -270,6 +254,9 @@ require('numb').setup{
    show_numbers = true,
    show_cursorline = true
 }
+
+--- telescope
+require('telescope').load_extension('project')
 
 --- diffview.nvim
 require('diffview').setup{}
@@ -311,6 +298,31 @@ vim.g.dashboard_custom_shortcut = {
 
 --- lsp_signature
 require('lsp_signature').setup()
+
+-- trouble.nvim
+require('trouble').setup {
+    position = 'right'
+}
+
+--- todo-comments.nvim
+require('todo-comments').setup()
+
+--- nvim-treesitter-textobjects
+require('nvim-treesitter.configs').setup {
+    textobjects = {
+        select = {
+            enable = true,
+            lookahead = true,
+
+            keymaps = {
+                ['af'] = '@function.outer',
+                ['if'] = '@function.inner',
+                ['ac'] = '@comment.outer',
+                ['ic'] = '@comment.inner',
+            },
+        },
+    },
+}
 
 --- which-key.nvim
 local termcode = function(str)
@@ -398,11 +410,13 @@ wk.register({
         b = { '<cmd>Telescope buffers<cr>', 'Find Buffers' },
         h = { '<cmd>Telescope help_tags<cr>', 'Find Help' },
         r = { '<cmd>Telescope file_browser<cr>', 'File Browser' },
+        s = { '<cmd>Telescope symbols<cr>', 'Find Symbols' },
+        p = { '<cmd>Telescope project<cr>', 'Find Projects' },
     },
     -- LSP
     ['K'] = { vim.lsp.buf.hover, 'Hover' },
     ['g'] = {
-        h = { vim.lsp.buf.references, 'References' },
+        h = { '<cmd>TroubleToggle lsp_references<cr>', 'References' },
         a = { vim.lsp.buf.code_action, 'Code Action' },
         r = { vim.lsp.buf.rename, 'Rename symbol' },
         D = { vim.lsp.buf.declaration, 'Declaration' },
@@ -431,8 +445,12 @@ wk.register({
     ['<leader>t'] = {
         name = 'Toggle',
         t = { '<cmd>NvimTreeToggle<cr>', 'Toggle NvimTree' },
+        T = { '<cmd>TroubleToggle todo<cr>', 'Toggle Todos' },
         u = { '<cmd>MundoToggle<cr>', 'Toggle Undo Tree' },
         s = { '<cmd>SymbolsOutline<cr>', 'Toggle Symbols Outline' },
+        g = { '<cmd>Neogit kind=split<cr>', 'Neogit' },
+        d = { '<cmd>TroubleToggle lsp_document_diagnostics<cr>', 'Document Diagnostics' },
+        D = { '<cmd>TroubleToggle lsp_workspace_diagnostics<cr>', 'Workspace Diagnostics' },
     },
     -- other
     ['Y'] = { 'y$', 'Yank to end', noremap = false },
