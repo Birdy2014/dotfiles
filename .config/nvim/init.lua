@@ -36,7 +36,13 @@ require('packer').startup(function()
     use 'sheerun/vim-polyglot'
     use 'neovim/nvim-lspconfig'
     use { 'nvim-treesitter/nvim-treesitter', branch = '0.5-compat', run = ':TSUpdate' }
-    use 'hrsh7th/nvim-compe'
+    use 'L3MON4D3/LuaSnip'
+    use 'hrsh7th/nvim-cmp'
+    use 'hrsh7th/cmp-calc'
+    use 'hrsh7th/cmp-nvim-lsp'
+    use 'hrsh7th/cmp-buffer'
+    use 'hrsh7th/cmp-path'
+    use 'saadparwaiz1/cmp_luasnip'
     use { 'lewis6991/gitsigns.nvim', requires = 'nvim-lua/plenary.nvim' }
     use 'sbdchd/neoformat'
     use 'simrat39/symbols-outline.nvim'
@@ -106,7 +112,7 @@ vim.opt.tabstop = 4
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.opt.timeoutlen = 500
-vim.opt.spelllang = 'en,de'
+vim.opt.spelllang = { 'en', 'de' }
 vim.opt.showmode = false
 vim.opt.termguicolors = true
 vim.opt.inccommand = 'nosplit'
@@ -157,12 +163,12 @@ vim.g.bufferline = {
 --- nvim-lspconfig
 local lspconfig = require('lspconfig')
 
-lspconfig.tsserver.setup{}
-
---lspconfig.clangd.setup{}
-lspconfig.ccls.setup{}
-
-lspconfig.pyright.setup{}
+local servers = { 'ccls', 'pyright', 'rust_analyzer', 'tsserver' }
+for _, lsp in ipairs(servers) do
+    lspconfig[lsp].setup {
+        capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+    }
+end
 
 lspconfig.texlab.setup{
     settings = {
@@ -172,14 +178,11 @@ lspconfig.texlab.setup{
                 onSave = true
             }
         }
-    }
+    },
+    capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
 }
 
-lspconfig.sumneko_lua.setup{
-    cmd = { 'lua-language-server' }
-}
-
-local signs = { Error = " ", Warning = " ", Hint = " ", Information = " " }
+local signs = { Error = " ", Warning = " ", Hint = " ", Information = " " }
 
 for type, icon in pairs(signs) do
     local hl = 'LspDiagnosticsSign' .. type
@@ -197,32 +200,76 @@ require('nvim-treesitter.configs').setup {
     }
 }
 
---- nvim-compe
+--- nvim-cmp
 vim.opt.shortmess:append('c')
-vim.opt.completeopt = 'menuone,noselect'
-require('compe').setup {
-    enabled = true;
-    autocomplete = true;
-    debug = false;
-    min_length = 1;
-    preselect = 'disable';
-    throttle_time = 80;
-    source_timeout = 200;
-    incomplete_delay = 400;
-    max_abbr_width = 100;
-    max_kind_width = 100;
-    max_menu_width = 100;
-    documentation = true;
 
-    source = {
-        path = true;
-        buffer = true;
-        calc = true;
-        nvim_lsp = true;
-        nvim_lua = true;
-        vsnip = false;
-    };
-}
+local has_words_before = function()
+    local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+    return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+end
+
+local luasnip = require('luasnip')
+
+local cmp = require('cmp')
+
+cmp.setup({
+    completion = {
+        completeopt = 'menuone,noselect',
+    },
+    preselect = cmp.PreselectMode.None,
+    snippet = {
+        expand = function(args)
+            luasnip.lsp_expand(args.body)
+        end,
+    },
+    mapping = {
+        ['<C-d>'] = cmp.mapping.scroll_docs(-4),
+        ['<C-f>'] = cmp.mapping.scroll_docs(4),
+        ['<C-e>'] = cmp.mapping.close(),
+        ['<C-Space>'] = cmp.mapping.complete(),
+        ['<CR>'] = cmp.mapping.confirm({ select = true }),
+
+        ["<Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+                cmp.select_next_item()
+            elseif luasnip.expand_or_jumpable() then
+                luasnip.expand_or_jump()
+            elseif has_words_before() then
+                cmp.complete()
+            else
+                fallback()
+            end
+        end, { "i", "s" }),
+
+        ["<S-Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+                cmp.select_prev_item()
+            elseif luasnip.jumpable(-1) then
+                luasnip.jump(-1)
+            else
+                fallback()
+            end
+        end, { "i", "s" }),
+    },
+    sources = {
+        { name = 'calc' },
+        { name = 'nvim_lsp' },
+        {
+            name = 'buffer',
+            opts = {
+                get_bufnrs = function()
+                    local bufs = {}
+                    for _, win in ipairs(vim.api.nvim_list_wins()) do
+                        bufs[vim.api.nvim_win_get_buf(win)] = true
+                    end
+                    return vim.tbl_keys(bufs)
+                end
+            }
+        },
+        { name = 'path' },
+        --{ name = 'luasnip' },
+    }
+})
 
 --- nvim-tree.lua
 vim.g.nvim_tree_git_hl = 1
@@ -232,7 +279,15 @@ require('nvim-tree').setup {
     auto_close = true,
     hijack_cursor = true,
     update_cwd = true,
-    lsp_diagnostics = true,
+    diagnostics = {
+        enable = true,
+        icons = {
+            hint = "",
+            info = "",
+            warning = "",
+            error = "",
+        }
+    },
     update_focused_file = {
         enable = true,
     },
@@ -332,41 +387,6 @@ require('nvim-treesitter.configs').setup {
 }
 
 --- which-key.nvim
-local termcode = function(str)
-    return vim.api.nvim_replace_termcodes(str, true, true, true)
-end
-
-local check_back_space = function()
-    local col = vim.fn.col('.') - 1
-    return col == 0 or vim.fn.getline('.'):sub(col, col):match('%s') ~= nil
-end
-
-local tab_complete = function()
-    if vim.fn.pumvisible() == 1 then
-        return termcode('<c-n>')
-    elseif check_back_space() then
-        return termcode('<tab>')
-    else
-        return vim.fn['compe#complete']()
-    end
-end
-
-local s_tab_complete = function()
-    if vim.fn.pumvisible() == 1 then
-        return termcode('<c-p>')
-    else
-        return termcode('<s-tab>')
-    end
-end
-
-local enter_insert = function()
-    if vim.fn.pumvisible() == 1 then
-        return vim.fn['compe#confirm']('<cr>')
-    else
-        return termcode('<cr>')
-    end
-end
-
 vim.g.mapleader = ' '
 
 local wk = require('which-key')
@@ -433,12 +453,6 @@ wk.register({
     },
     ['[d'] = { vim.lsp.diagnostic.goto_prev, 'Previous Diagnostic' },
     [']d'] = { vim.lsp.diagnostic.goto_next, 'Next Diagnostic' },
-    -- nvim-compe
-    ['<c-space>'] = { vim.fn['compe#complete'], 'Complete', mode = 'i' },
-    ['<cr>'] = { enter_insert, 'Confirm Completion', mode = 'i', expr = true },
-    ['<c-e>'] = { function() vim.fn['compe#close']('<c-e>') end, 'Close Completion', mode = 'i' },
-    ['<tab>'] = { tab_complete, 'Next Completion', mode = 'i', expr = true },
-    ['<s-tab>'] = { s_tab_complete, 'Previous Completion', mode = 'i', expr = true },
     -- terminal
     ['<esc><esc>'] = { '<c-bslash><c-n>', 'Exit Terminal Mode', mode = 't' },
     ['<c-h>'] = { '<c-bslash><c-n><cmd>TmuxNavigateLeft<cr>', 'Window Left', mode = 't' },
