@@ -225,14 +225,21 @@ require('compe').setup {
 }
 
 --- nvim-tree.lua
-vim.g.nvim_tree_width = 40
-vim.g.nvim_tree_auto_close = 1
-vim.g.nvim_tree_follow = 1
 vim.g.nvim_tree_git_hl = 1
-vim.g.nvim_tree_lsp_diagnostics = 1
-vim.g.nvim_tree_update_cwd = 1
 vim.g.nvim_tree_ignore = { '.git', 'node_modules', '.cache' }
 vim.cmd("autocmd BufWinEnter NvimTree setlocal cursorline")
+require('nvim-tree').setup {
+    auto_close = true,
+    hijack_cursor = true,
+    update_cwd = true,
+    lsp_diagnostics = true,
+    update_focused_file = {
+        enable = true,
+    },
+    view = {
+        width = 40
+    }
+}
 
 --- vim-mundo
 vim.g.mundo_right = 1
@@ -406,12 +413,13 @@ wk.register({
     ['<leader>f'] = {
         name = 'Find',
         f = { '<cmd>Telescope find_files<cr>', 'Find Files' },
-        g = { '<cmd>Telescope live_grep<cr>', 'Find Lines' },
+        l = { '<cmd>Telescope live_grep<cr>', 'Find Lines' },
         b = { '<cmd>Telescope buffers<cr>', 'Find Buffers' },
         h = { '<cmd>Telescope help_tags<cr>', 'Find Help' },
         r = { '<cmd>Telescope file_browser<cr>', 'File Browser' },
         s = { '<cmd>Telescope symbols<cr>', 'Find Symbols' },
         p = { '<cmd>Telescope project<cr>', 'Find Projects' },
+        m = { '<cmd>Telescope man_pages<cr>', 'Find Man Pages' },
     },
     -- LSP
     ['K'] = { vim.lsp.buf.hover, 'Hover' },
