@@ -1,3 +1,20 @@
+--[[
+
+External Requirements:
+- Neovim 0.5
+- Terminal with support for unicode and truecolors
+- Language Servers:
+    - ccls
+    - pyright
+    - rust_analyzer
+    - tsserver
+    - texlab
+- Debug Adapters
+    - lldb (with /bin/lldb-vscode binary)
+    - debugpy
+
+]]
+
 --- -----------------------
 ---        PLUGINS
 --- -----------------------
@@ -16,24 +33,23 @@ require('packer').startup(function()
     use 'zetashift/gruvbox-flat.nvim'
     use 'machakann/vim-highlightedyank'
     use { 'rrethy/vim-hexokinase', run = 'make hexokinase' }
-    use { 'hoob3rt/lualine.nvim', requires = 'kyazdani42/nvim-web-devicons' }
+    use { 'nvim-lualine/lualine.nvim', requires = 'kyazdani42/nvim-web-devicons' }
     use { 'romgrk/barbar.nvim', requires = 'kyazdani42/nvim-web-devicons' }
     use { 'kyazdani42/nvim-tree.lua', requires = 'kyazdani42/nvim-web-devicons' }
     use 'akinsho/nvim-toggleterm.lua'
     use 'glepnir/dashboard-nvim'
     use 'folke/which-key.nvim'
+    use 'luukvbaal/stabilize.nvim'
 
     -- Navigation
     use 'christoomey/vim-tmux-navigator'
     use 'justinmk/vim-sneak'
     use 'michaeljsmith/vim-indent-object'
     use 'nacro90/numb.nvim'
-    use 'haya14busa/vim-asterisk'
     use { 'nvim-telescope/telescope.nvim', requires = { 'nvim-lua/popup.nvim', 'nvim-lua/plenary.nvim' } }
     use { 'nvim-telescope/telescope-project.nvim', requires = 'nvim-telescope/telescope.nvim' }
 
     -- Coding
-    use 'sheerun/vim-polyglot'
     use 'neovim/nvim-lspconfig'
     use { 'nvim-treesitter/nvim-treesitter', branch = '0.5-compat', run = ':TSUpdate' }
     use 'L3MON4D3/LuaSnip'
@@ -42,6 +58,7 @@ require('packer').startup(function()
     use 'hrsh7th/cmp-nvim-lsp'
     use 'hrsh7th/cmp-buffer'
     use 'hrsh7th/cmp-path'
+    use 'kdheepak/cmp-latex-symbols'
     use 'saadparwaiz1/cmp_luasnip'
     use { 'lewis6991/gitsigns.nvim', requires = 'nvim-lua/plenary.nvim' }
     use 'sbdchd/neoformat'
@@ -51,6 +68,10 @@ require('packer').startup(function()
     use 'folke/trouble.nvim'
     use 'folke/todo-comments.nvim'
     use { 'nvim-treesitter/nvim-treesitter-textobjects', branch = '0.5-compat' }
+    use 'mtikekar/vim-bsv'
+    use 'mfussenegger/nvim-dap'
+    use { 'rcarriga/nvim-dap-ui', requires = { 'mfussenegger/nvim-dap' } }
+    use { 'theHamsta/nvim-dap-virtual-text', requires = { 'mfussenegger/nvim-dap' } }
 
     -- Other
     use 'vimwiki/vimwiki'
@@ -79,15 +100,6 @@ vim.cmd([[autocmd BufWritePre * %s/\s\+$//e]])
 --- Enter insert mode when navigating to a terminal
 vim.cmd('autocmd BufWinEnter,WinEnter term://* startinsert')
 
---- Set cursorline for nvim-tree.lua
-vim.cmd('autocmd FileType NvimTree setlocal cursorline')
-
---- enable spell checking in vimwiki
-vim.cmd('autocmd FileType vimwiki setlocal spell')
-
---- Override python tabstop ftplugin (workaround so Treesitter doesn't break the indentation)
-vim.cmd('autocmd BufEnter *.py setlocal tabstop=4')
-
 --- Format code on save
 vim.cmd [[
 augroup fmt
@@ -95,9 +107,6 @@ augroup fmt
     autocmd BufWritePre * call g:Clang_format()
 augroup END
 ]]
-
--- Vimwiki hide superscript
-vim.cmd('autocmd FileType vimwiki hi! link VimwikiSuperScript Normal')
 
 --- -----------------------
 ---     CONFIGURATION
@@ -134,6 +143,29 @@ vim.g.Hexokinase_optInPatterns = 'full_hex,rgb,rgba,hsl,hsla,colour_names'
 
 --- Highlightedyank
 vim.g.highlightedyank_highlight_duration = 200
+
+--- vimwiki
+vim.cmd('autocmd FileType vimwiki setlocal spell')
+vim.cmd('autocmd FileType vimwiki hi! link VimwikiSuperScript Normal')
+
+vim.g.vimwiki_list = {
+    {
+        path = '$HOME/vimwiki',
+        syntax = 'default',
+        template_path = '$HOME/vimwiki/templates',
+        template_default = 'default',
+        template_ext = '.html',
+        nested_syntaxes = {
+            python = 'python',
+            cpp = 'cpp',
+            java = 'java',
+            bsv = 'bsv',
+        }
+    }
+}
+
+--- stabilize
+require("stabilize").setup()
 
 --- Lualine
 local lualine = require('lualine')
@@ -193,10 +225,12 @@ end
 require('nvim-treesitter.configs').setup {
     ensure_installed = 'maintained',
     highlight = {
-        enable = true
+        enable = true,
+        additional_vim_regex_highlighting = false,
+        disable = { 'bash' },
     },
     indent = {
-        enable = false -- Currently broken
+        enable = false
     }
 }
 
@@ -211,6 +245,34 @@ end
 local luasnip = require('luasnip')
 
 local cmp = require('cmp')
+
+local lspkind = {
+    Text = "",
+    Method = "",
+    Function = "",
+    Constructor = "",
+    Field = "ﰠ",
+    Variable = "",
+    Class = "ﴯ",
+    Interface = "",
+    Module = "",
+    Property = "ﰠ",
+    Unit = "塞",
+    Value = "",
+    Enum = "",
+    Keyword = "",
+    Snippet = "",
+    Color = "",
+    File = "",
+    Reference = "",
+    Folder = "",
+    EnumMember = "",
+    Constant = "",
+    Struct = "פּ",
+    Event = "",
+    Operator = "",
+    TypeParameter = "",
+}
 
 cmp.setup({
     completion = {
@@ -254,6 +316,9 @@ cmp.setup({
     sources = {
         { name = 'calc' },
         { name = 'nvim_lsp' },
+        { name = 'path' },
+        { name = 'luasnip' },
+        { name = 'latex_symbols' },
         {
             name = 'buffer',
             opts = {
@@ -266,15 +331,59 @@ cmp.setup({
                 end
             }
         },
-        { name = 'path' },
-        --{ name = 'luasnip' },
+    },
+    formatting = {
+        format = function(entry, vim_item)
+            vim_item.kind = lspkind[vim_item.kind]
+            vim_item.menu = ({
+                calc = "[Calc]",
+                nvim_lsp = "[LSP]",
+                path = "[Path]",
+                luasnip = "[Snippet]",
+                latex_symbols = "[Latex]",
+                buffer = "[Buffer]",
+            })[entry.source.name]
+            return vim_item
+        end
+    },
+    sorting = {
+        comparators = {
+            cmp.config.compare.recently_used,
+            cmp.config.compare.score,
+            cmp.config.compare.offset,
+            --cmp.config.compare.exact,
+            --cmp.config.compare.kind,
+            --cmp.config.compare.sort_text,
+            --cmp.config.compare.length,
+            --cmp.config.compare.order,
+        },
+    },
+    experimental = {
+        ghost_text = true
+    }
+})
+
+cmp.setup.cmdline('/', {
+    sources = {
+        {
+            name = 'buffer',
+            opts = {
+                get_bufnrs = function()
+                    local bufs = {}
+                    for _, win in ipairs(vim.api.nvim_list_wins()) do
+                        bufs[vim.api.nvim_win_get_buf(win)] = true
+                    end
+                    return vim.tbl_keys(bufs)
+                end
+            }
+        }
     }
 })
 
 --- nvim-tree.lua
 vim.g.nvim_tree_git_hl = 1
-vim.g.nvim_tree_ignore = { '.git', 'node_modules', '.cache' }
 vim.cmd("autocmd BufWinEnter NvimTree setlocal cursorline")
+local tree_cb = require'nvim-tree.config'.nvim_tree_callback
 require('nvim-tree').setup {
     auto_close = true,
     hijack_cursor = true,
@@ -291,8 +400,53 @@ require('nvim-tree').setup {
     update_focused_file = {
         enable = true,
     },
+    filters = {
+        dotfiles = false,
+        custom = {
+            '.git',
+            'node_modules',
+            '.cache',
+            '.ccls-cache'
+        },
+    },
     view = {
-        width = 40
+        width = 40,
+        mappings = {
+            custom_only = true,
+            list = {
+                { key = {"<CR>", "o", "<2-LeftMouse>"}, cb = tree_cb("edit") },
+                { key = {"<2-RightMouse>", "<C-]>"},    cb = tree_cb("cd") },
+                { key = "<C-v>",                        cb = tree_cb("vsplit") },
+                { key = "<C-x>",                        cb = tree_cb("split") },
+                { key = "<",                            cb = tree_cb("prev_sibling") },
+                { key = ">",                            cb = tree_cb("next_sibling") },
+                { key = "P",                            cb = tree_cb("parent_node") },
+                { key = "<BS>",                         cb = tree_cb("close_node") },
+                { key = "<S-CR>",                       cb = tree_cb("close_node") },
+                { key = "<Tab>",                        cb = tree_cb("preview") },
+                { key = "K",                            cb = tree_cb("first_sibling") },
+                { key = "J",                            cb = tree_cb("last_sibling") },
+                { key = "I",                            cb = tree_cb("toggle_ignored") },
+                { key = "H",                            cb = tree_cb("toggle_dotfiles") },
+                { key = "R",                            cb = tree_cb("refresh") },
+                { key = "a",                            cb = tree_cb("create") },
+                { key = "d",                            cb = tree_cb("remove") },
+                { key = "r",                            cb = tree_cb("rename") },
+                { key = "<C-r>",                        cb = tree_cb("full_rename") },
+                { key = "x",                            cb = tree_cb("cut") },
+                { key = "c",                            cb = tree_cb("copy") },
+                { key = "p",                            cb = tree_cb("paste") },
+                { key = "y",                            cb = tree_cb("copy_name") },
+                { key = "Y",                            cb = tree_cb("copy_path") },
+                { key = "gy",                           cb = tree_cb("copy_absolute_path") },
+                { key = "[c",                           cb = tree_cb("prev_git_item") },
+                { key = "]c",                           cb = tree_cb("next_git_item") },
+                { key = "-",                            cb = tree_cb("dir_up") },
+                { key = "s",                            cb = tree_cb("system_open") },
+                { key = "q",                            cb = tree_cb("close") },
+                { key = "g?",                           cb = tree_cb("toggle_help") },
+            }
+        }
     }
 }
 
@@ -301,14 +455,21 @@ vim.g.mundo_right = 1
 
 --- nvim-toggleterm
 require("toggleterm").setup{
-    size = 15,
+    size = function(term)
+        if term.direction == 'horizontal' then
+            return 15
+        elseif term.direction == 'vertical' then
+            return vim.o.columns * 0.3
+        end
+    end,
     open_mapping = '<c-t>',
     shade_filetypes = {},
     shade_terminals = true,
     shading_factor = '1',
     start_in_insert = true,
     persist_size = true,
-    direction = 'float',
+    direction = 'vertical',
+    close_on_exit = true,
 }
 
 --- numb.nvim
@@ -347,7 +508,7 @@ vim.g.dashboard_custom_header = {
     ' ██║╚██╗██║ ██╔══╝  ██║   ██║ ╚██╗ ██╔╝ ██║ ██║╚██╔╝██║',
     ' ██║ ╚████║ ███████╗╚██████╔╝  ╚████╔╝  ██║ ██║ ╚═╝ ██║',
     ' ╚═╝  ╚═══╝ ╚══════╝ ╚═════╝    ╚═══╝   ╚═╝ ╚═╝     ╚═╝',
-    }
+}
 vim.g.dashboard_custom_shortcut = {
     last_session       = 'SPC S l',
     find_history       = 'SPC f h',
@@ -356,7 +517,7 @@ vim.g.dashboard_custom_shortcut = {
     change_colorscheme = 'SPC t c',
     find_word          = 'SPC f g',
     book_marks         = 'SPC f b',
-    }
+}
 
 --- lsp_signature
 require('lsp_signature').setup()
@@ -386,8 +547,130 @@ require('nvim-treesitter.configs').setup {
     },
 }
 
+--- nvim-dap
+local dap = require('dap')
+dap.adapters.lldb = {
+    type = 'executable',
+    command = '/usr/bin/lldb-vscode',
+    name = 'lldb'
+}
+
+dap.configurations.cpp = {
+    {
+        name = "Launch",
+        type = "lldb",
+        request = "launch",
+        program = function()
+            return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+        end,
+        cwd = '${workspaceFolder}',
+        stopOnEntry = false,
+        args = {},
+        runInTerminal = false,
+    },
+}
+
+dap.configurations.c = dap.configurations.cpp
+dap.configurations.rust = dap.configurations.cpp
+
+dap.adapters.python = {
+    type = 'executable';
+    command = '/bin/python';
+    args = { '-m', 'debugpy.adapter' };
+}
+
+dap.configurations.python = {
+    {
+        -- The first three options are required by nvim-dap
+        type = 'python'; -- the type here established the link to the adapter definition: `dap.adapters.python`
+        request = 'launch';
+        name = "Launch file";
+
+        -- Options below are for debugpy, see https://github.com/microsoft/debugpy/wiki/Debug-configuration-settings for supported options
+
+        program = "${file}"; -- This configuration will launch the current file if used.
+        pythonPath = function()
+            -- debugpy supports launching an application with a different interpreter then the one used to launch debugpy itself.
+            -- The code below looks for a `venv` or `.venv` folder in the current directly and uses the python within.
+            -- You could adapt this - to for example use the `VIRTUAL_ENV` environment variable.
+            local cwd = vim.fn.getcwd()
+            if vim.fn.executable(cwd .. '/venv/bin/python') == 1 then
+                return cwd .. '/venv/bin/python'
+            elseif vim.fn.executable(cwd .. '/.venv/bin/python') == 1 then
+                return cwd .. '/.venv/bin/python'
+            else
+                return '/usr/bin/python'
+            end
+        end;
+    },
+}
+
+--- nvim-dap-ui
+require("dapui").setup({
+    icons = { expanded = "▾", collapsed = "▸" },
+    mappings = {
+        -- Use a table to apply multiple mappings
+        expand = { "<CR>", "<2-LeftMouse>" },
+        open = "o",
+        remove = "d",
+        edit = "e",
+        repl = "r",
+    },
+    sidebar = {
+    -- You can change the order of elements in the sidebar
+        elements = {
+            -- Provide as ID strings or tables with "id" and "size" keys
+            {
+                id = "scopes",
+                size = 0.25, -- Can be float or integer > 1
+            },
+            { id = "breakpoints", size = 0.25 },
+            { id = "stacks", size = 0.25 },
+            { id = "watches", size = 00.25 },
+        },
+        size = 40,
+        position = "left", -- Can be "left", "right", "top", "bottom"
+    },
+    tray = {
+        elements = { "repl" },
+        size = 10,
+        position = "bottom", -- Can be "left", "right", "top", "bottom"
+    },
+    floating = {
+        max_height = nil, -- These can be integers or a float between 0 and 1.
+        max_width = nil, -- Floats will be treated as percentage of your screen.
+        mappings = {
+            close = { "q", "<Esc>" },
+        },
+    },
+    windows = { indent = 1 },
+})
+
+--- nvim-dap-virtual-text
+require('nvim-dap-virtual-text').setup{}
+
 --- which-key.nvim
 vim.g.mapleader = ' '
+
+local dap = require('dap')
+local dapui = require('dapui')
+
+function close_buffer(name)
+    local nr = vim.fn.bufnr(name)
+    if nr > 0 then
+        vim.cmd('bw ' .. nr)
+    end
+end
+
+function SaveSession()
+    close_buffer('NvimTree')
+    close_buffer('DAP Scopes')
+    close_buffer('DAP Breakpoints')
+    close_buffer('DAP Stacks')
+    close_buffer('DAP Watches')
+    close_buffer('[dap-repl]')
+    vim.cmd('SessionSave')
+end
 
 local wk = require('which-key')
 wk.setup()
@@ -426,7 +709,7 @@ wk.register({
     -- sessions
     ['<leader>S'] = {
         name = 'Sessions',
-        s = { '<cmd>SessionSave<cr>', 'Save Session' },
+        s = { SaveSession, 'Save Session' },
         l = { '<cmd>SessionLoad<cr>', 'Load Session' },
     },
     -- Telescope
@@ -474,6 +757,20 @@ wk.register({
         d = { '<cmd>TroubleToggle lsp_document_diagnostics<cr>', 'Document Diagnostics' },
         D = { '<cmd>TroubleToggle lsp_workspace_diagnostics<cr>', 'Workspace Diagnostics' },
     },
+    -- debug
+    ['<leader>d'] = {
+        name = 'Debug',
+        t = { dapui.toggle, 'Toggle DAP UI' },
+        b = { dap.toggle_breakpoint, 'Toggle breakpoint' },
+        B = { function() dap.set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, 'Set breakpoint condition' },
+        p = { function() dap.set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, 'Set breakpoint log' },
+        r = { dap.repl.open, 'Open REPL' },
+        l = { dap.run_last, 'Run last' },
+    },
+    ['<F5>'] = { dap.continue, 'Continue' },
+    ['<F10>'] = { dap.step_over, 'Step over' },
+    ['<F11>'] = { dap.step_into, 'Step into' },
+    ['<F12>'] = { dap.step_out, 'Step out' },
     -- other
     ['Y'] = { 'y$', 'Yank to end', noremap = false },
     ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
