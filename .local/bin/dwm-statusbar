@@ -12,7 +12,7 @@ CACHEDIR=${XDG_RUNTIME_DIR:-/tmp}/scripts/dwm-statusbar
 mkdir -p $CACHEDIR
 
 get_time() {
-    echo "$(date "+%a %d %b %H:%M")"
+    echo "$(LC_TIME=de_DE.utf8 date '+%A %d. %B %H:%M')"
 }
 
 get_volume() {
@@ -86,8 +86,9 @@ update_network() {
 }
 
 get_network() {
-    local rx=$(update_network /sys/class/net/*/statistics/rx_bytes)
-    local tx=$(update_network /sys/class/net/*/statistics/tx_bytes)
+    [ -z "/sys/class/net/[e,w]*" ] && exit
+    local rx=$(update_network /sys/class/net/[e,w]*/statistics/rx_bytes)
+    local tx=$(update_network /sys/class/net/[e,w]*/statistics/tx_bytes)
     printf ' %5s  %5s | ' "$rx" "$tx"
 }
 
@@ -95,12 +96,28 @@ get_calendar() {
     local out
     which khal &> /dev/null || exit
     out="$(khal list now $(date -I) 23:59 --day-format '' --format '{start-style} {title}' | sed -n 1p)"
+    [ "$out" = "No events" ] && exit
     echo -n "$out | "
+}
+
+get_music() {
+    which playerctl &> /dev/null || exit
+    local status="$(playerctl status 2>&1)"
+    local status_sym
+    case "$status" in
+        Paused) status_sym='';;
+        Playing) status_sym='';;
+        *) exit;;
+    esac
+    local title="$(playerctl metadata | grep xesam:title | sed -e 's/^.*title\s*//')"
+    #echo -n "$status_sym $(cut -c 1-25 <<< $title) | "
+    [ ${#title} -gt 28 ] && title="$(cut -c 1-25 <<< $title)..."
+    echo -n "$status_sym $title | "
 }
 
 update_statusbar() {
     local statusbar_text
-    for func in get_calendar get_connections get_network get_battery get_volume get_time; do
+    for func in get_music get_calendar get_connections get_network get_battery get_volume get_time; do
         statusbar_text="${statusbar_text}$($func)"
     done
     xsetroot -name "$statusbar_text"
@@ -117,4 +134,5 @@ case $1 in
     refresh) update_statusbar;;
     start) [ -f $CACHEDIR/pidfile ] && ps $(< $CACHEDIR/pidfile) > /dev/null && echo "dwm-statusbar is already running" || (loop & echo $! > $CACHEDIR/pidfile);;
     stop) [ -f $CACHEDIR/pidfile ] && (kill $(< $CACHEDIR/pidfile); rm $CACHEDIR/pidfile) || echo "dwm-statusbar is not running";;
+    restart) ([ -f $CACHEDIR/pidfile ] && kill $(< $CACHEDIR/pidfile)); (loop & echo $! > $CACHEDIR/pidfile);;
 esac

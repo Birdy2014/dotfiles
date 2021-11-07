@@ -28,6 +28,10 @@ alias l='ls -lAh'
 alias tm='tmux new-session -A -s main'
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 alias tetris=tetriscurses
+alias gap='git add -p'
+
+# Variables
+export MANPAGER='nvim +Man!'
 
 # Functions
 function set_terminal_title() {
@@ -62,7 +66,7 @@ precmd() {
 
 preexec() {
     echo -ne '\e[5 q'; # beam shape cursor after prompt
-    set_terminal_title "$1"
+    set_terminal_title "$2"
 }
 
 # Theme

@@ -1,52 +1,28 @@
 #!/usr/bin/sh
 
-list() {
-    lsblk
+menu() {
+    local selection=$(printf 'Mount\nUnmount' | dmenu)
+    case "$selection" in
+        Mount) mount;;
+        Unmount) unmount;;
+    esac
 }
 
 mount() {
-    [ -n "$1" ] && udisksctl mount -b /dev/$1
-    [ -n "$1" ] || (selm && [ -n "$PART" ] && mount $PART)
+    selm && [ -n "$PART" ] && udisksctl mount -b /dev/$PART
 }
 
 unmount() {
-    [ -n "$1" ] && udisksctl unmount -b /dev/$1
-    [ -n "$1" ] || (selu && [ -n "$PART" ] && unmount $PART)
-}
-
-open() {
-    selo && [ -n "$PART" ] && ranger $PART
+    selu && [ -n "$PART" ] && udisksctl unmount -b /dev/$PART
 }
 
 selm() {
-    PART=$(lsblk | grep part | awk '{print match($7, /[^ ]/) ? "" : ($1 " " $4)}' | sed -r '/^\s*$/d' | cut -c7- | dmenu | awk '{print $1}')
+    #                                                                         remove disks  remove disk str  remove mounted    trim whitespace
+    PART=$(lsblk --noheadings --list --output=TYPE,MOUNTPOINT,NAME,SIZE,LABEL | grep part | cut -d' ' -f2- | sed '/^\//d' | sed 's/^[ \t]*//;s/[ \t]*$//' | dmenu -l 10 | awk '{print $1}')
 }
 
 selu() {
-    PART=$(lsblk | grep part | awk '{print match($7, /[^ ]/) ? ($1 " " $4 " " $7) : ""}' | sed -r '/^\s*$/d' | cut -c7- | dmenu -l 10 | awk '{print $1}')
+    PART=$(lsblk --noheadings --list --output=TYPE,NAME,SIZE,LABEL,MOUNTPOINT | grep part | cut -d' ' -f2- | sed '/\//!d' | dmenu -l 10 | awk '{print $1}')
 }
 
-selo() {
-    PART=$(lsblk | grep part | awk '{print match($7, /[^ ]/) ? ($1 " " $4 " " $7) : ""}' | sed -r '/^\s*$/d' | cut -c7- | dmenu -l 10 | awk '{print $3}')
-}
-
-help() {
-    echo "Usage: disk [option] <disk>"
-    echo "options:"
-    echo "  list / ls"
-    echo "  mount / m"
-    echo "  unmount / u"
-    echo "  open / o"
-}
-
-case $1 in
-    list) list;;
-    mount) mount $2;;
-    unmount) unmount $2;;
-    open) open;;
-    ls) list;;
-    m) mount $2;;
-    u) unmount $2;;
-    o) open;;
-    *) help;;
-esac
+menu
