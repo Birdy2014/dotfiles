@@ -1,15 +1,15 @@
 --[[
 
 External Requirements:
-- Neovim 0.5
+- Neovim 0.6
 - Terminal with support for unicode and truecolors
 - Language Servers:
-    - ccls
+    - clangd
     - pyright
     - rust_analyzer
     - tsserver
     - texlab
-- Debug Adapters
+- Debug Adapters (start debugging with F5)
     - lldb (with /bin/lldb-vscode binary)
     - debugpy
 
@@ -30,10 +30,11 @@ require('packer').startup(function()
     use 'wbthomason/packer.nvim'
 
     -- Theme / Statusbars / Visual
-    use 'zetashift/gruvbox-flat.nvim'
+    use 'eddyekofo94/gruvbox-flat.nvim'
     use 'machakann/vim-highlightedyank'
     use { 'rrethy/vim-hexokinase', run = 'make hexokinase' }
     use { 'nvim-lualine/lualine.nvim', requires = 'kyazdani42/nvim-web-devicons' }
+    use { 'arkav/lualine-lsp-progress', requires = 'nvim-lualine/lualine.nvim' }
     use { 'romgrk/barbar.nvim', requires = 'kyazdani42/nvim-web-devicons' }
     use { 'kyazdani42/nvim-tree.lua', requires = 'kyazdani42/nvim-web-devicons' }
     use 'akinsho/nvim-toggleterm.lua'
@@ -43,7 +44,7 @@ require('packer').startup(function()
 
     -- Navigation
     use 'christoomey/vim-tmux-navigator'
-    use 'justinmk/vim-sneak'
+    use 'phaazon/hop.nvim'
     use 'michaeljsmith/vim-indent-object'
     use 'nacro90/numb.nvim'
     use { 'nvim-telescope/telescope.nvim', requires = { 'nvim-lua/popup.nvim', 'nvim-lua/plenary.nvim' } }
@@ -51,13 +52,14 @@ require('packer').startup(function()
 
     -- Coding
     use 'neovim/nvim-lspconfig'
-    use { 'nvim-treesitter/nvim-treesitter', branch = '0.5-compat', run = ':TSUpdate' }
+    use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
     use 'L3MON4D3/LuaSnip'
     use 'hrsh7th/nvim-cmp'
     use 'hrsh7th/cmp-calc'
     use 'hrsh7th/cmp-nvim-lsp'
     use 'hrsh7th/cmp-buffer'
     use 'hrsh7th/cmp-path'
+    use 'hrsh7th/cmp-cmdline'
     use 'kdheepak/cmp-latex-symbols'
     use 'saadparwaiz1/cmp_luasnip'
     use { 'lewis6991/gitsigns.nvim', requires = 'nvim-lua/plenary.nvim' }
@@ -67,11 +69,13 @@ require('packer').startup(function()
     use 'ray-x/lsp_signature.nvim'
     use 'folke/trouble.nvim'
     use 'folke/todo-comments.nvim'
-    use { 'nvim-treesitter/nvim-treesitter-textobjects', branch = '0.5-compat' }
+    use { 'nvim-treesitter/nvim-treesitter-textobjects' }
     use 'mtikekar/vim-bsv'
     use 'mfussenegger/nvim-dap'
     use { 'rcarriga/nvim-dap-ui', requires = { 'mfussenegger/nvim-dap' } }
     use { 'theHamsta/nvim-dap-virtual-text', requires = { 'mfussenegger/nvim-dap' } }
+    use 'tikhomirov/vim-glsl'
+    use 'digitaltoad/vim-pug'
 
     -- Other
     use 'vimwiki/vimwiki'
@@ -136,6 +140,10 @@ vim.opt.listchars = 'tab:>-,trail:-,nbsp:+'
 vim.opt.eadirection = 'hor'
 vim.opt.equalalways = true
 vim.cmd('colorscheme gruvbox-flat')
+vim.opt.breakindent = true
+vim.opt.breakindentopt = 'sbr'
+vim.opt.showbreak = '↪ '
+vim.opt.scrolloff = 1
 
 --- Hexokinase
 vim.g.Hexokinase_highlighters = { 'foregroundfull' }
@@ -179,7 +187,7 @@ lualine.setup{
     sections = {
         lualine_a = { {'mode', upper = true} },
         lualine_b = { {'branch', icon = ''}, { 'diff' } },
-        lualine_c = { { 'diagnostics', sources = { 'nvim_lsp' } }, {'filename', file_status = true} },
+        lualine_c = { { 'diagnostics', sources = { 'nvim_lsp' } }, { 'lsp_progress' }, {'filename', file_status = true} },
         lualine_x = { 'encoding', 'fileformat', 'filetype' },
         lualine_y = { 'progress' },
         lualine_z = { 'location'  },
@@ -195,7 +203,7 @@ vim.g.bufferline = {
 --- nvim-lspconfig
 local lspconfig = require('lspconfig')
 
-local servers = { 'ccls', 'pyright', 'rust_analyzer', 'tsserver' }
+local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver' }
 for _, lsp in ipairs(servers) do
     lspconfig[lsp].setup {
         capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
@@ -214,10 +222,10 @@ lspconfig.texlab.setup{
     capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
 }
 
-local signs = { Error = " ", Warning = " ", Hint = " ", Information = " " }
+local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
 
 for type, icon in pairs(signs) do
-    local hl = 'LspDiagnosticsSign' .. type
+    local hl = 'DiagnosticSign' .. type
     vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
 end
 
@@ -227,7 +235,6 @@ require('nvim-treesitter.configs').setup {
     highlight = {
         enable = true,
         additional_vim_regex_highlighting = false,
-        disable = { 'bash' },
     },
     indent = {
         enable = false
@@ -321,7 +328,7 @@ cmp.setup({
         { name = 'latex_symbols' },
         {
             name = 'buffer',
-            opts = {
+            option = {
                 get_bufnrs = function()
                     local bufs = {}
                     for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -367,7 +374,7 @@ cmp.setup.cmdline('/', {
     sources = {
         {
             name = 'buffer',
-            opts = {
+            option = {
                 get_bufnrs = function()
                     local bufs = {}
                     for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -379,6 +386,14 @@ cmp.setup.cmdline('/', {
         }
     }
 })
+
+cmp.setup.cmdline(':', {
+    sources = {
+        { name = 'path' },
+        { name = 'cmdline' }
+    }
+})
+
 
 --- nvim-tree.lua
 vim.g.nvim_tree_git_hl = 1
@@ -649,6 +664,10 @@ require("dapui").setup({
 --- nvim-dap-virtual-text
 require('nvim-dap-virtual-text').setup{}
 
+--- hop.nvim
+local hop = require('hop')
+hop.setup()
+
 --- which-key.nvim
 vim.g.mapleader = ' '
 
@@ -771,6 +790,9 @@ wk.register({
     ['<F10>'] = { dap.step_over, 'Step over' },
     ['<F11>'] = { dap.step_into, 'Step into' },
     ['<F12>'] = { dap.step_out, 'Step out' },
+    -- hop
+    ['s'] = { hop.hint_char2, 'Hop char2' },
+    ['S'] = { hop.hint_words, 'Hop word' },
     -- other
     ['Y'] = { 'y$', 'Yank to end', noremap = false },
     ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -780,6 +802,8 @@ wk.register({
     ['>'] = { '>gv', 'Indent', mode = 'v' },
     ['ö'] = { '[', '', noremap = false },
     ['ä'] = { ']', '', noremap = false },
+    ['öö'] = { '[[', '' },
+    ['ää'] = { ']]', '' },
     ['Ö'] = { '{', '', noremap = false },
     ['Ä'] = { '}', '', noremap = false },
 })
