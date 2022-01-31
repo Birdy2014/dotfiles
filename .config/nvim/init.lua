@@ -130,7 +130,7 @@ vim.opt.showmode = false
 vim.opt.termguicolors = true
 vim.opt.inccommand = 'nosplit'
 vim.opt.title = true
-vim.opt.guifont = 'JetbrainsMono Nerd Font Mono:h11'
+vim.opt.guifont = 'JetbrainsMono Nerd Font:h11'
 vim.opt.background = 'dark'
 vim.opt.undofile = true
 vim.opt.undodir = vim.fn.getenv('HOME') .. '/.local/share/nvim/undo'
@@ -187,7 +187,7 @@ lualine.setup{
     sections = {
         lualine_a = { {'mode', upper = true} },
         lualine_b = { {'branch', icon = ''}, { 'diff' } },
-        lualine_c = { { 'diagnostics', sources = { 'nvim_lsp' } }, { 'lsp_progress' }, {'filename', file_status = true} },
+        lualine_c = { { 'diagnostics', sources = { 'nvim_diagnostic' } }, { 'lsp_progress' }, {'filename', file_status = true} },
         lualine_x = { 'encoding', 'fileformat', 'filetype' },
         lualine_y = { 'progress' },
         lualine_z = { 'location'  },
@@ -301,8 +301,6 @@ cmp.setup({
         ["<Tab>"] = cmp.mapping(function(fallback)
             if cmp.visible() then
                 cmp.select_next_item()
-            elseif luasnip.expand_or_jumpable() then
-                luasnip.expand_or_jump()
             elseif has_words_before() then
                 cmp.complete()
             else
@@ -313,8 +311,6 @@ cmp.setup({
         ["<S-Tab>"] = cmp.mapping(function(fallback)
             if cmp.visible() then
                 cmp.select_prev_item()
-            elseif luasnip.jumpable(-1) then
-                luasnip.jump(-1)
             else
                 fallback()
             end
@@ -738,10 +734,9 @@ wk.register({
         l = { '<cmd>Telescope live_grep<cr>', 'Find Lines' },
         b = { '<cmd>Telescope buffers<cr>', 'Find Buffers' },
         h = { '<cmd>Telescope help_tags<cr>', 'Find Help' },
-        r = { '<cmd>Telescope file_browser<cr>', 'File Browser' },
         s = { '<cmd>Telescope symbols<cr>', 'Find Symbols' },
         p = { '<cmd>Telescope project<cr>', 'Find Projects' },
-        m = { '<cmd>Telescope man_pages<cr>', 'Find Man Pages' },
+        m = { function() require('telescope.builtin').man_pages({ sections = { "1", "2", "3", "4", "5", "6", "7", "8", "9" } }) end, 'Find Man Pages' },
     },
     -- LSP
     ['K'] = { vim.lsp.buf.hover, 'Hover' },
