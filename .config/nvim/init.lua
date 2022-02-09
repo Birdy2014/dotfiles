@@ -331,7 +331,8 @@ cmp.setup({
                         bufs[vim.api.nvim_win_get_buf(win)] = true
                     end
                     return vim.tbl_keys(bufs)
-                end
+                end,
+                keyword_pattern = [[\k\+]]
             }
         },
     },
@@ -748,8 +749,8 @@ wk.register({
         d = { vim.lsp.buf.definition, 'Definition' },
         i = { vim.lsp.buf.implementation, 'Implementation' },
     },
-    ['[d'] = { vim.lsp.diagnostic.goto_prev, 'Previous Diagnostic' },
-    [']d'] = { vim.lsp.diagnostic.goto_next, 'Next Diagnostic' },
+    ['[d'] = { vim.diagnostic.goto_prev, 'Previous Diagnostic' },
+    [']d'] = { vim.diagnostic.goto_next, 'Next Diagnostic' },
     -- terminal
     ['<esc><esc>'] = { '<c-bslash><c-n>', 'Exit Terminal Mode', mode = 't' },
     ['<c-h>'] = { '<c-bslash><c-n><cmd>TmuxNavigateLeft<cr>', 'Window Left', mode = 't' },
