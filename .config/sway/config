@@ -1,0 +1,205 @@
+# Required Applications
+# - swayidle
+# - swaylock
+# - rofi
+# - kitty
+# - dunst
+# - playerctl
+# - pamixer
+
+include /etc/sway/config.d/*
+
+# ---------
+# Variables
+# ---------
+set $mod Mod4
+set $term kitty
+set $launcher rofi -show combi
+
+# Workspace names
+set $ws1 1
+set $ws2 2
+set $ws3 3
+set $ws4 4
+set $ws5 5
+set $ws6 6
+set $ws7 7
+set $ws8 8
+set $ws9 9
+set $ws10 10
+
+# Colors
+#set $color_accent #98971a
+#set $color_accent #a9b665
+set $color_accent #45403d
+set $color_bg #32302f
+set $color_bg_dark #282828
+
+# -----
+# Input
+# -----
+input type:keyboard {
+    xkb_layout "de"
+    xkb_variant "nodeadkeys"
+    xkb_options "caps:escape"
+    xkb_model "pc101"
+}
+
+input type:touchpad {
+    tap enabled
+    natural_scroll enabled
+}
+
+# Hide cursor after 5 seconds of inactivity
+seat seat0 hide_cursor 5000
+
+# ------
+# Output
+# ------
+output "Unknown U34G2G4R3 0x00001553" {
+    adaptive_sync on
+    mode 3440x1440@140Hz
+    bg ~/.config/sway/bgimage fill
+}
+
+# ----------
+# Status Bar
+# ----------
+bar {
+    swaybar_command waybar
+    workspace_buttons yes
+}
+
+# ------
+# Colors
+# ------
+#                       title-border    title-background  title-text  indicator  border
+client.focused          $color_accent   $color_accent     #eeeeee     #ffffff    $color_accent
+client.focused_inactive $color_bg       $color_bg         #eeeeee     #ffffff    $color_bg
+client.unfocused        $color_bg_dark  $color_bg_dark    #bbbbbb     #ffffff    $color_bg_dark
+#client.urgent
+
+# -------------
+# Other theming
+# -------------
+font "JetbrainsMono Nerd Font" 10
+smart_gaps on
+gaps inner 5
+seat seat0 xcursor_theme LyraX 48
+
+# ------------
+# Window rules
+# ------------
+
+# XWayland/xdg_shell indicator
+for_window [shell="xwayland"] title_format "%title :: %shell"
+
+# Make first workspace floating
+for_window [workspace=$ws1] floating enable
+
+assign [class="Steam"] $ws5
+assign [class="discord"] $ws7
+assign [app_id="thunderbird"] $ws6
+for_window [class="zoom"] floating enable
+for_window [class="steam_app" title="Origin"] floating enable
+for_window [class="Birdy3d"] floating enable
+
+# --------
+# Keybinds
+# --------
+# Moving Windows
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# Workspaces
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
+bindsym $mod+0 workspace $ws10
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9
+bindsym $mod+Shift+0 move container to workspace $ws10
+
+# Multimedia Keys
+bindsym XF86AudioMute exec pamixer -t
+bindsym XF86AudioLowerVolume exec pamixer -d 5
+bindsym XF86AudioRaiseVolume exec pamixer -i 5
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioPrev exec playerctl previous
+bindsym XF86AudioNext exec playerctl next
+
+# Start Applications
+bindsym $mod+Return exec $term
+bindsym $mod+d exec $launcher
+bindsym $mod+q kill
+
+# Layout
+bindsym $mod+b splith
+bindsym $mod+v splitv
+
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+
+bindsym $mod+a focus parent
+bindsym $mod+y focus child
+bindsym $mod+x sticky toggle
+
+floating_modifier $mod normal
+bindsym $mod+space floating toggle
+bindsym $mod+Shift+space focus mode_toggle
+
+# Resizing
+mode "resize" {
+    bindsym h resize shrink width 10px
+    bindsym j resize grow height 10px
+    bindsym k resize shrink height 10px
+    bindsym l resize grow width 10px
+
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# System (Exit, Shutdown, ...)
+bindsym Control+Mod4+Mod1+q exit
+bindsym Control+Mod4+Mod1+l exec loginctl lock-session
+bindsym Control+Mod4+Mod1+s exec systemctl poweroff
+bindsym Control+Mod4+Mod1+r exec systemctl reboot
+
+# Scratchpad
+# TODO: Scratchpad
+
+# ---------
+# Autostart
+# ---------
+exec dunst
+
+exec swayidle -w \
+    timeout 1800 'swaylock -c #282828' \
+    timeout 1805 'swaymsg "output * dpms off"' \
+    resume 'swaymsg "output * dpms on"' \
+    before-sleep 'playerctl pause' \
+    before-sleep 'swaylock -c #282828'
+
+exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway

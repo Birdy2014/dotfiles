@@ -1,0 +1,10 @@
+configuration {
+    modi: "combi,drun,run,ssh";
+    font: "JetbransMono Nerd Font 12";
+    combi-modi: "drun,ssh,run";
+    show-icons: true;
+    terminal: "kitty";
+    parse-known-hosts: false;
+}
+
+@theme "gruvbox-dark"
