@@ -5,7 +5,8 @@
 # - kitty
 # - dunst
 # - playerctl
-# - pamixer
+# - pactl
+# - brightnessctl
 
 include /etc/sway/config.d/*
 
@@ -15,6 +16,10 @@ include /etc/sway/config.d/*
 set $mod Mod4
 set $term kitty
 set $launcher rofi -show combi
+set $font "JetbrainsMono Nerd Font"
+set $cursor-theme LyraX-cursors
+set $gtk-theme 'Gruvbox-Material-Dark'
+set $gtk-icon-theme 'Gruvbox-Material-Dark'
 
 # Workspace names
 set $ws1 1
@@ -82,10 +87,17 @@ client.unfocused        $color_bg_dark  $color_bg_dark    #bbbbbb     #ffffff   
 # -------------
 # Other theming
 # -------------
-font "JetbrainsMono Nerd Font" 10
+font $font 10
 smart_gaps on
 gaps inner 5
-seat seat0 xcursor_theme LyraX 48
+seat seat0 xcursor_theme $cursor-theme 24
+
+exec_always {
+    gsettings set org.gnome.desktop.interface gtk-theme $gtk-theme
+    gsettings set org.gnome.desktop.interface icon-theme $gtk-icon-theme
+    gsettings set org.gnome.desktop.interface cursor-theme $cursor-theme
+    gsettings set org.gnome.desktop.interface font-name $font
+}
 
 # ------------
 # Window rules
@@ -141,12 +153,15 @@ bindsym $mod+Shift+9 move container to workspace $ws9
 bindsym $mod+Shift+0 move container to workspace $ws10
 
 # Multimedia Keys
-bindsym XF86AudioMute exec pamixer -t
-bindsym XF86AudioLowerVolume exec pamixer -d 5
-bindsym XF86AudioRaiseVolume exec pamixer -i 5
-bindsym XF86AudioPlay exec playerctl play-pause
-bindsym XF86AudioPrev exec playerctl previous
-bindsym XF86AudioNext exec playerctl next
+bindsym --locked XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+bindsym --locked XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle
+bindsym --locked XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5%
+bindsym --locked XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +5%
+bindsym --locked XF86AudioPlay exec playerctl play-pause
+bindsym --locked XF86AudioPrev exec playerctl previous
+bindsym --locked XF86AudioNext exec playerctl next
+bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
+bindsym XF86MonBrightnessUp exec brightnessctl set +5%
 
 # Start Applications
 bindsym $mod+Return exec $term
@@ -154,8 +169,9 @@ bindsym $mod+d exec $launcher
 bindsym $mod+q kill
 
 # Layout
-bindsym $mod+b splith
-bindsym $mod+v splitv
+bindsym $mod+c split none
+bindsym $mod+v split vertical
+bindsym $mod+b split horizontal
 
 bindsym $mod+s layout stacking
 bindsym $mod+w layout tabbed
@@ -164,6 +180,7 @@ bindsym $mod+e layout toggle split
 bindsym $mod+a focus parent
 bindsym $mod+y focus child
 bindsym $mod+x sticky toggle
+bindsym $mod+f fullscreen toggle
 
 floating_modifier $mod normal
 bindsym $mod+space floating toggle
@@ -196,10 +213,13 @@ bindsym Control+Mod4+Mod1+r exec systemctl reboot
 exec dunst
 
 exec swayidle -w \
-    timeout 1800 'swaylock -c #282828' \
-    timeout 1805 'swaymsg "output * dpms off"' \
+    timeout 600 'swaylock -c 282828' \
+    timeout 605 'swaymsg "output * dpms off"' \
     resume 'swaymsg "output * dpms on"' \
     before-sleep 'playerctl pause' \
-    before-sleep 'swaylock -c #282828'
+    before-sleep 'swaylock -c 282828' \
+    lock 'swaylock -c 282828'
 
 exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
+
+exec kdeconnect-indicator
