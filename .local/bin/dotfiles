@@ -1,43 +1,43 @@
-#!/usr/bin/sh
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+trap "exit" INT
 
 pkglist=(
     # terminal
-    "zsh"
-    "zsh-syntax-highlighting"
+    "kitty"
+    "fish"
 
     # desktop
-    "xorg-server"
-    "xorg-xsetroot"
-    "xorg-xrdb"
-    "xorg-xinit"
-    "picom"
-    "xss-lock"
-    "pulseaudio"
+    "sway"
+    "swayidle"
+    "swaylock"
+    "xorg-xwayland"
+    "waybar"
+    "rofi"
+    "pipewire"
+    "pipewire-pulse"
+    "pipewire-alsa"
     "dunst"
+    "wl-clipboard"
 
     # other applications
     "neovim"
-    "xclip"
-    "nodejs"
-    "python-pynvim"
     "firefox"
-    "ranger"
+    "lf"
     "zathura"
     "zathura-pdf-mupdf"
     "git"
     "sudo"
-    "python-pip"
     "clang"
-    "ctags"
-    "ueberzug"
     "highlight"
-    "fzf"
+    "ripgrep"
+    "imv"
 )
 
 aurpkgs=(
-    "nerd-fonts-mononoki"
-    "zsh-theme-minimal"
-    "matcha-gtk-theme"
+    "nerd-fonts-jetbrains-mono"
 )
 
 install_git() {
@@ -69,17 +69,6 @@ install_packages() {
     for pkgname in $aurpkgs; do
         pacman -Qi $pkgname > /dev/null || yay --noconfirm -S $pkgname
     done
-
-    # install custom packages
-    [ -d ~/pkgs ] && {
-        for pkgname in st slock dwm; do
-            [ -d "/tmp/$pkgname" ] && rm -rf "/tmp/$pkgname"
-            mkdir /tmp/$pkgname
-            cp ~/pkgs/$pkgname /tmp/$pkgname/PKGBUILD
-            cd /tmp/$pkgname
-            makepkg -si --noconfirm && cd .. && rm -rf ./$pkgname
-        done
-    }
 }
 
 setup_dotfiles() {
@@ -87,7 +76,12 @@ setup_dotfiles() {
     git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME checkout
 }
 
-install_git
-[ -d "$HOME/.dotfiles" ] && git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME pull || setup_dotfiles
-install_packages
-
+case $1 in
+    setup)
+        install_git
+        [ -d "$HOME/.dotfiles" ] && git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME pull || setup_dotfiles
+        install_packages
+        ;;
+    *)
+        echo "Run $0 setup"
+esac

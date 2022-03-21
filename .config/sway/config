@@ -16,10 +16,11 @@ include /etc/sway/config.d/*
 set $mod Mod4
 set $term kitty
 set $launcher rofi -show combi
+set $file-manager PYTHONWARNINGS="ignore" $term ranger
 set $font "JetbrainsMono Nerd Font"
 set $cursor-theme LyraX-cursors
-set $gtk-theme 'Gruvbox-Material-Dark'
-set $gtk-icon-theme 'Gruvbox-Material-Dark'
+set $gtk-theme "Gruvbox-Material-Dark"
+set $gtk-icon-theme "Gruvbox-Material-Dark"
 
 # Workspace names
 set $ws1 1
@@ -34,11 +35,10 @@ set $ws9 9
 set $ws10 10
 
 # Colors
-#set $color_accent #98971a
-#set $color_accent #a9b665
-set $color_accent #45403d
-set $color_bg #32302f
-set $color_bg_dark #282828
+set $color-accent #45403d
+set $color-bg #32302f
+set $color-bg-dark #282828
+set $color-fg #d4be98
 
 # -----
 # Input
@@ -79,9 +79,9 @@ bar {
 # Colors
 # ------
 #                       title-border    title-background  title-text  indicator  border
-client.focused          $color_accent   $color_accent     #eeeeee     #ffffff    $color_accent
-client.focused_inactive $color_bg       $color_bg         #eeeeee     #ffffff    $color_bg
-client.unfocused        $color_bg_dark  $color_bg_dark    #bbbbbb     #ffffff    $color_bg_dark
+client.focused          $color-accent   $color-accent     #eeeeee     #ffffff    $color-accent
+client.focused_inactive $color-bg       $color-bg         $color-fg   #ffffff    $color-bg
+client.unfocused        $color-bg-dark  $color-bg-dark    $color-fg   #ffffff    $color-bg-dark
 #client.urgent
 
 # -------------
@@ -89,6 +89,7 @@ client.unfocused        $color_bg_dark  $color_bg_dark    #bbbbbb     #ffffff   
 # -------------
 font $font 10
 smart_gaps on
+smart_borders on
 gaps inner 5
 seat seat0 xcursor_theme $cursor-theme 24
 
@@ -102,9 +103,8 @@ exec_always {
 # ------------
 # Window rules
 # ------------
-
-# XWayland/xdg_shell indicator
-for_window [shell="xwayland"] title_format "%title :: %shell"
+# XWayland title indicator
+for_window [shell="xwayland"] title_format "%title [XWayland]"
 
 # Make first workspace floating
 for_window [workspace=$ws1] floating enable
@@ -112,7 +112,10 @@ for_window [workspace=$ws1] floating enable
 assign [class="Steam"] $ws5
 assign [class="discord"] $ws7
 assign [app_id="thunderbird"] $ws6
-for_window [class="zoom"] floating enable
+
+for_window [class="zoom"] floating enable; inhibit_idle open
+for_window [class="Steam"] inhibit_idle none
+for_window [class="steam_app"] inhibit_idle open
 for_window [class="steam_app" title="Origin"] floating enable
 for_window [class="Birdy3d"] floating enable
 
@@ -168,6 +171,10 @@ bindsym $mod+Return exec $term
 bindsym $mod+d exec $launcher
 bindsym $mod+q kill
 
+bindsym $mod+Control+w exec firefox
+bindsym $mod+Control+y exec firefox -p Youtube
+bindsym $mod+Control+n exec $file-manager
+
 # Layout
 bindsym $mod+c split none
 bindsym $mod+v split vertical
@@ -213,13 +220,13 @@ bindsym Control+Mod4+Mod1+r exec systemctl reboot
 exec dunst
 
 exec swayidle -w \
-    timeout 600 'swaylock -c 282828' \
-    timeout 605 'swaymsg "output * dpms off"' \
+    timeout 300 'swaymsg "output * dpms off"' \
     resume 'swaymsg "output * dpms on"' \
+    timeout 305 'swaylock -f -c 282828' \
     before-sleep 'playerctl pause' \
-    before-sleep 'swaylock -c 282828' \
-    lock 'swaylock -c 282828'
+    before-sleep 'swaylock -f -c 282828' \
+    lock 'swaylock -f -c 282828'
 
-exec dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP=sway
+exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
 
 exec kdeconnect-indicator
