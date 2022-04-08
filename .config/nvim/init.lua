@@ -14,6 +14,8 @@ External Requirements:
     - lldb (with /bin/lldb-vscode binary)
     - debugpy
 
+Run :PackerSync after updating the config file and to update plugins.
+
 ]]
 
 --- -----------------------
@@ -80,12 +82,7 @@ require('packer').startup(function()
     }
     use {
         'romgrk/barbar.nvim',
-        requires = 'kyazdani42/nvim-web-devicons',
-        config = function()
-            vim.g.bufferline = {
-                closable = false
-            }
-        end
+        requires = 'kyazdani42/nvim-web-devicons'
     }
     use {
         'kyazdani42/nvim-tree.lua',
@@ -95,7 +92,6 @@ require('packer').startup(function()
             vim.cmd("autocmd BufWinEnter NvimTree setlocal cursorline")
             local tree_cb = require'nvim-tree.config'.nvim_tree_callback
             require('nvim-tree').setup {
-                auto_close = true,
                 hijack_cursor = true,
                 update_cwd = true,
                 diagnostics = {
@@ -162,7 +158,7 @@ require('packer').startup(function()
         end
     }
     use {
-        'akinsho/nvim-toggleterm.lua',
+        'akinsho/toggleterm.nvim',
         config = function()
             require('toggleterm').setup {
                 size = function(term)
@@ -257,7 +253,7 @@ require('packer').startup(function()
                 }
             end
 
-            lspconfig.texlab.setup{
+            lspconfig.texlab.setup {
                 settings = {
                     latex = {
                         build = {
@@ -281,6 +277,25 @@ require('packer').startup(function()
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate',
         config = function()
+            local parser_configs = require('nvim-treesitter.parsers').get_parser_configs()
+
+            -- Neorg
+            parser_configs.norg_meta = {
+                install_info = {
+                    url = "https://github.com/nvim-neorg/tree-sitter-norg-meta",
+                    files = { "src/parser.c" },
+                    branch = "main"
+                },
+            }
+
+            parser_configs.norg_table = {
+                install_info = {
+                    url = "https://github.com/nvim-neorg/tree-sitter-norg-table",
+                    files = { "src/parser.c" },
+                    branch = "main"
+                },
+            }
+
             require('nvim-treesitter.configs').setup {
                 ensure_installed = 'maintained',
                 highlight = {
@@ -291,6 +306,8 @@ require('packer').startup(function()
                     enable = false
                 }
             }
+
+            require('nvim-treesitter.install').update { 'norg', 'norg_meta', 'norg_table' }
         end
     }
     use {
@@ -524,7 +541,6 @@ require('packer').startup(function()
             require('todo-comments').setup()
         end
     }
-    use 'mtikekar/vim-bsv'
     use {
         'mfussenegger/nvim-dap',
         config = function()
@@ -640,9 +656,12 @@ require('packer').startup(function()
             require('nvim-dap-virtual-text').setup()
         end
     }
+
+    -- Languages
     use 'tikhomirov/vim-glsl'
     use 'digitaltoad/vim-pug'
     use 'lluchs/vim-wren'
+    use 'mtikekar/vim-bsv'
 
     -- Other
     use {
@@ -667,6 +686,53 @@ require('packer').startup(function()
                 }
             }
         end
+    }
+    use {
+        'nvim-neorg/neorg',
+        requires =  'nvim-lua/plenary.nvim',
+        after = 'nvim-treesitter',
+        config = function()
+            require('neorg').setup {
+                load = {
+                    ["core.defaults"] = {},
+                    ["core.norg.dirman"] = {
+                        config = {
+                            workspaces = {
+                                workspace = "~/Documents/neorg",
+                            },
+                            autochdir = true,
+                            index = 'index.norg',
+                        }
+                    },
+                    ["core.norg.concealer"] = {
+                        config = {
+                            preset = 'diamond'
+                        }
+                    },
+                    ["core.norg.completion"] = {
+                        config = {
+                            engine = "nvim-cmp"
+                        }
+                    },
+                    ["core.norg.qol.toc"] = {
+                        config = {
+                            toc_split_placement = "left"
+                        }
+                    },
+                    ["core.keybinds"] = {
+                        config = {
+                            default_keybinds = false,
+                            hook = function(keybinds)
+                                keybinds.remap_event("norg", "n", "<cr>", "core.norg.esupports.hop.hop-link")
+                                keybinds.remap_event("toc-split", "n", "<cr>", "core.norg.qol.toc.hop-toc-link")
+                                keybinds.remap_event("toc-split", "n", "q", "core.norg.qol.toc.close")
+                                keybinds.remap_event("toc-split", "n", "<esc>", "core.norg.qol.toc.close")
+                            end,
+                        }
+                    }
+                }
+            }
+        end,
     }
     use {
         'simnalamburt/vim-mundo',
@@ -811,6 +877,12 @@ require('packer').startup(function()
                 -- hop
                 ['s'] = { hop.hint_char2, 'Hop char2' },
                 ['S'] = { hop.hint_words, 'Hop word' },
+                -- move line
+                ['<m-c-k>'] = { ':m -2<cr>==', 'Move line up' },
+                ['<m-c-j>'] = { ':m +1<cr>==', 'Move line down' },
+                -- which-key.nvim doesn't seem to support multiple mappings with same key
+                --['<m-c-k>'] = { ':m \'<-2<cr>gv=gv', 'Move lines up', mode = 'v' },
+                --['<m-c-j>'] = { ':m \'>+1<cr>gv=gv', 'Move lines up', mode = 'v' },
                 -- other
                 ['Y'] = { 'y$', 'Yank to end', noremap = false },
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -828,6 +900,14 @@ require('packer').startup(function()
         end
     }
 end)
+
+-- automatically call PackerCompile if init.lua was edited
+local config_file = vim.fn.stdpath('config')..'/init.lua'
+local compile_file = vim.fn.stdpath('config')..'/plugin/packer_compiled.lua'
+if (vim.fn.filereadable(config_file) and vim.fn.filereadable(compile_file) and vim.fn.getftime(config_file) > vim.fn.getftime(compile_file))
+then
+    vim.cmd [[ PackerCompile ]]
+end
 
 --- -----------------------
 ---       FUNCTIONS
@@ -856,6 +936,9 @@ augroup fmt
     autocmd BufWritePre * call g:Clang_format()
 augroup END
 ]]
+
+--- auto-close NvimTree
+vim.cmd [[autocmd BufEnter * ++nested if winnr('$') == 1 && bufname() == 'NvimTree_' . tabpagenr() | quit | endif]]
 
 --- -----------------------
 ---     CONFIGURATION
@@ -888,3 +971,15 @@ vim.opt.breakindent = true
 vim.opt.breakindentopt = 'sbr'
 vim.opt.showbreak = '↪ '
 vim.opt.scrolloff = 1
+
+-- TODO: Put this back into packer config. This crashes barbar on PackerCompile
+vim.g.bufferline = {
+    closable = false
+}
+
+
+-- TODO: Remove when which-key.nvim supports mappings with same keys for multiple modes
+vim.cmd [[
+vnoremap <m-c-k> :m '<-2<cr>gv=gv
+vnoremap <m-c-j> :m '>+1<cr>gv=gv
+]]
