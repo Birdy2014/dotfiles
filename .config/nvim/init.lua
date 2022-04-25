@@ -1,7 +1,7 @@
 --[[
 
 External Requirements:
-- Neovim 0.6
+- Neovim 0.7+
 - Terminal with support for unicode and truecolors
 - A patched font from https://www.nerdfonts.com/
 - Language Servers:
@@ -13,8 +13,9 @@ External Requirements:
 - Debug Adapters (start debugging with F5)
     - lldb (with /bin/lldb-vscode binary)
     - debugpy
+- python and the 'pynvim' python-package (for vim-mundo)
 
-Run :PackerSync after updating the config file and to update plugins.
+Run :PackerSync after changing the config file and to update plugins.
 
 ]]
 
@@ -26,11 +27,26 @@ local install_path = vim.fn.stdpath('data')..'/site/pack/packer/start/packer.nvi
 if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
     vim.fn.system({'git', 'clone', 'https://github.com/wbthomason/packer.nvim', install_path})
     vim.api.nvim_command('packadd packer.nvim')
-    vim.cmd('autocmd VimEnter * PackerSync')
+    vim.api.nvim_create_autocmd('VimEnter', {
+        callback = function()
+            require('packer').sync()
+        end
+    })
 end
 
 require('packer').startup(function()
     use 'wbthomason/packer.nvim'
+
+    -- Dependencies
+    use {
+        'sindrets/diffview.nvim',
+        module = 'diffview'
+    }
+
+    use {
+        'nvim-lua/plenary.nvim',
+        module = 'plenary'
+    }
 
     -- Theme / Statusbars / Visual
     use {
@@ -39,20 +55,48 @@ require('packer').startup(function()
             vim.cmd('colorscheme gruvbox-flat')
         end
     }
+
     use {
-        'machakann/vim-highlightedyank',
+        'norcalli/nvim-colorizer.lua',
+        run = [[bash -c 'patch lua/colorizer.lua <<EOF
+diff --git a/lua/colorizer.lua b/lua/colorizer.lua
+index e47e079..4e6afde 100644
+--- a/lua/colorizer.lua
++++ b/lua/colorizer.lua
+@@ -17,7 +17,7 @@ local COLOR_MAP
+ local COLOR_TRIE
+ local COLOR_NAME_MINLEN, COLOR_NAME_MAXLEN
+ local COLOR_NAME_SETTINGS = {
+-	lowercase = false;
++	lowercase = true;
+ 	strip_digits = false;
+ }
+
+        EOF']],
         config = function()
-            vim.g.highlightedyank_highlight_duration = 200
+            require 'colorizer'.setup({
+                '*',
+                css = {
+                    names = true,
+                    css = true,
+                },
+                sass = {
+                    names = true,
+                    css = true,
+                },
+                scss = {
+                    names = true,
+                    css = true,
+                },
+            }, {
+                names = false,
+                lowercase = true,
+                RRGGBBAA = true,
+                mode = 'foreground',
+            })
         end
     }
-    use {
-        'rrethy/vim-hexokinase',
-        run = 'make hexokinase',
-        config = function()
-            vim.g.Hexokinase_highlighters = { 'foregroundfull' }
-            vim.g.Hexokinase_optInPatterns = 'full_hex,rgb,rgba,hsl,hsla,colour_names'
-        end
-    }
+
     use {
         'nvim-lualine/lualine.nvim',
         requires = {
@@ -76,20 +120,27 @@ require('packer').startup(function()
                     lualine_y = { 'progress' },
                     lualine_z = { 'location'  },
                 },
-                extensions = { 'nvim-tree' }
+                extensions = { 'nvim-tree', 'toggleterm', 'symbols-outline' }
             }
         end
     }
+
     use {
         'romgrk/barbar.nvim',
         requires = 'kyazdani42/nvim-web-devicons'
     }
+
     use {
         'kyazdani42/nvim-tree.lua',
         requires = 'kyazdani42/nvim-web-devicons',
         config = function()
             vim.g.nvim_tree_git_hl = 1
-            vim.cmd("autocmd BufWinEnter NvimTree setlocal cursorline")
+            vim.api.nvim_create_autocmd('BufWinEnter', {
+                pattern = 'NvimTree*',
+                callback = function()
+                    vim.wo.cursorline = true
+                end
+            })
             local tree_cb = require'nvim-tree.config'.nvim_tree_callback
             require('nvim-tree').setup {
                 hijack_cursor = true,
@@ -107,12 +158,20 @@ require('packer').startup(function()
                     enable = true,
                 },
                 filters = {
-                    dotfiles = false,
+                    dotfiles = true,
                     custom = {
                         '.git',
                         'node_modules',
                         '.cache',
                         '.ccls-cache'
+                    },
+                },
+                actions = {
+                    change_dir = {
+                        global = true
+                    },
+                    open_file = {
+                        resize_window = true
                     },
                 },
                 view = {
@@ -121,9 +180,7 @@ require('packer').startup(function()
                         custom_only = true,
                         list = {
                             { key = {"<CR>", "o", "<2-LeftMouse>"}, cb = tree_cb("edit") },
-                            { key = {"<2-RightMouse>", "<C-]>"},    cb = tree_cb("cd") },
-                            { key = "<C-v>",                        cb = tree_cb("vsplit") },
-                            { key = "<C-x>",                        cb = tree_cb("split") },
+                            { key = {"c", "<2-RightMouse>"},        cb = tree_cb("cd") },
                             { key = "<",                            cb = tree_cb("prev_sibling") },
                             { key = ">",                            cb = tree_cb("next_sibling") },
                             { key = "P",                            cb = tree_cb("parent_node") },
@@ -136,18 +193,17 @@ require('packer').startup(function()
                             { key = "H",                            cb = tree_cb("toggle_dotfiles") },
                             { key = "R",                            cb = tree_cb("refresh") },
                             { key = "a",                            cb = tree_cb("create") },
-                            { key = "d",                            cb = tree_cb("remove") },
+                            { key = "D",                            cb = tree_cb("remove") },
                             { key = "r",                            cb = tree_cb("rename") },
                             { key = "<C-r>",                        cb = tree_cb("full_rename") },
-                            { key = "x",                            cb = tree_cb("cut") },
-                            { key = "c",                            cb = tree_cb("copy") },
+                            { key = "d",                            cb = tree_cb("cut") },
+                            { key = "y",                            cb = tree_cb("copy") },
                             { key = "p",                            cb = tree_cb("paste") },
-                            { key = "y",                            cb = tree_cb("copy_name") },
                             { key = "Y",                            cb = tree_cb("copy_path") },
-                            { key = "gy",                           cb = tree_cb("copy_absolute_path") },
+                            { key = "gy",                           cb = tree_cb("copy_name") },
                             { key = "[c",                           cb = tree_cb("prev_git_item") },
                             { key = "]c",                           cb = tree_cb("next_git_item") },
-                            { key = "-",                            cb = tree_cb("dir_up") },
+                            { key = "u",                            cb = tree_cb("dir_up") },
                             { key = "s",                            cb = tree_cb("system_open") },
                             { key = "q",                            cb = tree_cb("close") },
                             { key = "g?",                           cb = tree_cb("toggle_help") },
@@ -157,8 +213,10 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
         'akinsho/toggleterm.nvim',
+        keys = '<c-t>',
         config = function()
             require('toggleterm').setup {
                 size = function(term)
@@ -169,9 +227,7 @@ require('packer').startup(function()
                     end
                 end,
                 open_mapping = '<c-t>',
-                shade_filetypes = {},
                 shade_terminals = true,
-                shading_factor = '1',
                 start_in_insert = true,
                 persist_size = true,
                 direction = 'vertical',
@@ -179,29 +235,28 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
-        'glepnir/dashboard-nvim',
+        'goolord/alpha-nvim',
+        requires = 'kyazdani42/nvim-web-devicons',
         config = function()
-            vim.g.dashboard_default_executive = 'telescope'
-            vim.g.dashboard_custom_header = {
-                ' ███╗   ██╗ ███████╗ ██████╗  ██╗   ██╗ ██╗ ███╗   ███╗',
-                ' ████╗  ██║ ██╔════╝██╔═══██╗ ██║   ██║ ██║ ████╗ ████║',
-                ' ██╔██╗ ██║ █████╗  ██║   ██║ ██║   ██║ ██║ ██╔████╔██║',
-                ' ██║╚██╗██║ ██╔══╝  ██║   ██║ ╚██╗ ██╔╝ ██║ ██║╚██╔╝██║',
-                ' ██║ ╚████║ ███████╗╚██████╔╝  ╚████╔╝  ██║ ██║ ╚═╝ ██║',
-                ' ╚═╝  ╚═══╝ ╚══════╝ ╚═════╝    ╚═══╝   ╚═╝ ╚═╝     ╚═╝',
+            local alpha_config = require('alpha.themes.theta').config
+            local dashboard = require('alpha.themes.dashboard')
+            alpha_config.layout[6].val = {
+                { type = 'text', val = 'Quick links', opts = { hl = 'SpecialComment', position = 'center' } },
+                { type = 'padding', val = 1 },
+                dashboard.button('e', '  New file', '<cmd>ene<cr>'),
+                dashboard.button('SPC f f', '  Find file', '<cmd>Telescope find_files<cr>'),
+                dashboard.button('SPC f p', '  Open Projects', '<cmd>Telescope project<cr>'),
+                dashboard.button('SPC f m', 'ﲉ  Find Man Pages', '<cmd>Telescope man_pages sections=["1","2","3","4","5","6","7","8","9"]<cr>'),
+                dashboard.button('SPC t t', 'פּ  Open File Tree', '<cmd>NvimTreeToggle<cr>'),
+                dashboard.button('u', '  Update plugins' , '<cmd>PackerSync<cr>'),
+                dashboard.button('q', '  Quit' , '<cmd>qa<cr>'),
             }
-            vim.g.dashboard_custom_shortcut = {
-                last_session       = 'SPC S l',
-                find_history       = 'SPC f h',
-                find_file          = 'SPC f f',
-                new_file           = 'SPC c n',
-                change_colorscheme = 'SPC t c',
-                find_word          = 'SPC f g',
-                book_marks         = 'SPC f b',
-            }
+            require('alpha').setup(alpha_config)
         end
     }
+
     use {
         'luukvbaal/stabilize.nvim',
         config = function()
@@ -209,15 +264,28 @@ require('packer').startup(function()
         end
     }
 
+    use {
+        'lukas-reineke/indent-blankline.nvim',
+        config = function()
+            require('indent_blankline').setup {
+                buftype_exclude = { 'terminal' },
+                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree' }
+            }
+        end
+    }
+
     -- Navigation
     use 'christoomey/vim-tmux-navigator'
+
     use {
         'phaazon/hop.nvim',
         config = function()
             require('hop').setup()
         end
     }
+
     use 'michaeljsmith/vim-indent-object'
+
     use {
         'nacro90/numb.nvim',
         config = function()
@@ -227,13 +295,18 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
         'nvim-telescope/telescope.nvim',
-        requires = { 'nvim-lua/popup.nvim', 'nvim-lua/plenary.nvim' }
+        cmd = 'Telescope',
+        module = { 'telescope', 'telescope.builtin' },
+        requires = { 'nvim-lua/plenary.nvim' }
     }
+
     use {
         'nvim-telescope/telescope-project.nvim',
         requires = 'nvim-telescope/telescope.nvim',
+        after = 'telescope.nvim',
         config = function()
             require('telescope').load_extension('project')
         end
@@ -246,10 +319,26 @@ require('packer').startup(function()
         config = function()
             local lspconfig = require('lspconfig')
 
+            function on_lsp_attach()
+                local clients = vim.lsp.get_active_clients()
+                local bufnr = vim.api.nvim_get_current_buf()
+
+                for _, client in ipairs(clients) do
+                    if client.resolved_capabilities.goto_definition then
+                        vim.api.nvim_buf_set_option(bufnr, 'tagfunc', 'v:lua.vim.lsp.tagfunc')
+                    end
+
+                    if client.resolved_capabilities.document_formatting then
+                        vim.api.nvim_buf_set_option(bufnr, 'formatexpr', 'v:lua.vim.lsp.formatexpr()')
+                    end
+                end
+            end
+
             local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver' }
             for _, lsp in ipairs(servers) do
                 lspconfig[lsp].setup {
-                    capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+                    capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities()),
+                    on_attach = on_lsp_attach
                 }
             end
 
@@ -262,7 +351,8 @@ require('packer').startup(function()
                         }
                     }
                 },
-                capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+                capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities()),
+                on_attach = on_lsp_attach
             }
 
             local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
@@ -273,31 +363,13 @@ require('packer').startup(function()
             end
         end
     }
+
     use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate',
         config = function()
-            local parser_configs = require('nvim-treesitter.parsers').get_parser_configs()
-
-            -- Neorg
-            parser_configs.norg_meta = {
-                install_info = {
-                    url = "https://github.com/nvim-neorg/tree-sitter-norg-meta",
-                    files = { "src/parser.c" },
-                    branch = "main"
-                },
-            }
-
-            parser_configs.norg_table = {
-                install_info = {
-                    url = "https://github.com/nvim-neorg/tree-sitter-norg-table",
-                    files = { "src/parser.c" },
-                    branch = "main"
-                },
-            }
-
             require('nvim-treesitter.configs').setup {
-                ensure_installed = 'maintained',
+                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'comment', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
                     additional_vim_regex_highlighting = false,
@@ -306,13 +378,13 @@ require('packer').startup(function()
                     enable = false
                 }
             }
-
-            require('nvim-treesitter.install').update { 'norg', 'norg_meta', 'norg_table' }
         end
     }
+
     use {
         'nvim-treesitter/nvim-treesitter-textobjects',
         requires = 'nvim-treesitter/nvim-treesitter',
+        after = 'nvim-treesitter',
         config = function()
             require('nvim-treesitter.configs').setup {
                 textobjects = {
@@ -331,6 +403,7 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
         'hrsh7th/nvim-cmp',
         requires = {
@@ -424,6 +497,7 @@ require('packer').startup(function()
                     { name = 'path' },
                     { name = 'luasnip' },
                     { name = 'latex_symbols' },
+                    { name = 'neorg' },
                     {
                         name = 'buffer',
                         option = {
@@ -447,6 +521,7 @@ require('packer').startup(function()
                             path = "[Path]",
                             luasnip = "[Snippet]",
                             latex_symbols = "[Latex]",
+                            neorg = "[Neorg]",
                             buffer = "[Buffer]",
                         })[entry.source.name]
                         return vim_item
@@ -456,11 +531,11 @@ require('packer').startup(function()
                     comparators = {
                         cmp.config.compare.recently_used,
                         cmp.config.compare.score,
+                        cmp.config.compare.length,
                         cmp.config.compare.offset,
                         --cmp.config.compare.exact,
                         --cmp.config.compare.kind,
                         --cmp.config.compare.sort_text,
-                        --cmp.config.compare.length,
                         --cmp.config.compare.order,
                     },
                 },
@@ -494,6 +569,7 @@ require('packer').startup(function()
             })
         end
     }
+
     use {
         'lewis6991/gitsigns.nvim',
         requires = 'nvim-lua/plenary.nvim',
@@ -501,18 +577,21 @@ require('packer').startup(function()
             require('gitsigns').setup()
         end
     }
-    use 'sbdchd/neoformat'
+
     use {
         'simrat39/symbols-outline.nvim',
+        cmd = 'SymbolsOutline',
         config = function()
             vim.g.symbols_outline = {
                 width = 15,
             }
         end
     }
+
     use {
         'TimUntersberger/neogit',
-        requires = { 'nvim-lua/plenary.nvim', 'nvim-lua/popup.nvim', 'sindrets/diffview.nvim' },
+        requires = { 'nvim-lua/plenary.nvim', 'sindrets/diffview.nvim' },
+        cmd = 'Neogit',
         config = function()
             require('neogit').setup{
                 integrations = {
@@ -521,26 +600,32 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
         'ray-x/lsp_signature.nvim',
         config = function()
             require('lsp_signature').setup()
         end
     }
+
     use {
         'folke/trouble.nvim',
+        cmd = 'TroubleToggle',
         config = function()
             require('trouble').setup {
                 position = 'right'
             }
         end
     }
+
     use {
         'folke/todo-comments.nvim',
+        after = 'trouble.nvim',
         config = function()
             require('todo-comments').setup()
         end
     }
+
     use {
         'mfussenegger/nvim-dap',
         config = function()
@@ -577,18 +662,14 @@ require('packer').startup(function()
 
             dap.configurations.python = {
                 {
-                    -- The first three options are required by nvim-dap
-                    type = 'python'; -- the type here established the link to the adapter definition: `dap.adapters.python`
+                    type = 'python';
                     request = 'launch';
                     name = "Launch file";
 
                     -- Options below are for debugpy, see https://github.com/microsoft/debugpy/wiki/Debug-configuration-settings for supported options
 
-                    program = "${file}"; -- This configuration will launch the current file if used.
+                    program = "${file}";
                     pythonPath = function()
-                        -- debugpy supports launching an application with a different interpreter then the one used to launch debugpy itself.
-                        -- The code below looks for a `venv` or `.venv` folder in the current directly and uses the python within.
-                        -- You could adapt this - to for example use the `VIRTUAL_ENV` environment variable.
                         local cwd = vim.fn.getcwd()
                         if vim.fn.executable(cwd .. '/venv/bin/python') == 1 then
                             return cwd .. '/venv/bin/python'
@@ -604,6 +685,7 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
         'rcarriga/nvim-dap-ui',
         requires = 'mfussenegger/nvim-dap',
@@ -649,6 +731,7 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
         'theHamsta/nvim-dap-virtual-text',
         requires = 'mfussenegger/nvim-dap',
@@ -658,17 +741,37 @@ require('packer').startup(function()
     }
 
     -- Languages
-    use 'tikhomirov/vim-glsl'
-    use 'digitaltoad/vim-pug'
-    use 'lluchs/vim-wren'
-    use 'mtikekar/vim-bsv'
+    use {
+        'tikhomirov/vim-glsl',
+        ft = 'glsl'
+    }
+
+    use {
+        'digitaltoad/vim-pug',
+        ft = 'pug'
+    }
+
+    use {
+        'lluchs/vim-wren',
+        ft = 'wren'
+    }
+
+    use {
+        'mtikekar/vim-bsv',
+        ft = 'bsv'
+    }
 
     -- Other
     use {
         'vimwiki/vimwiki',
         config = function()
-            vim.cmd('autocmd FileType vimwiki setlocal spell')
-            vim.cmd('autocmd FileType vimwiki hi! link VimwikiSuperScript Normal')
+            vim.api.nvim_create_autocmd('FileType', {
+                pattern = 'vimwiki',
+                callback = function()
+                    vim.wo.spell = true
+                    vim.cmd('hi! link VimwikiSuperScript Normal')
+                end
+            })
 
             vim.g.vimwiki_list = {
                 {
@@ -687,11 +790,34 @@ require('packer').startup(function()
             }
         end
     }
+
     use {
         'nvim-neorg/neorg',
         requires =  'nvim-lua/plenary.nvim',
         after = 'nvim-treesitter',
+        ft = 'norg',
+        cmd = 'NeorgStart',
         config = function()
+            local parser_configs = require('nvim-treesitter.parsers').get_parser_configs()
+
+            parser_configs.norg_meta = {
+                install_info = {
+                    url = "https://github.com/nvim-neorg/tree-sitter-norg-meta",
+                    files = { "src/parser.c" },
+                    branch = "main"
+                },
+            }
+
+            parser_configs.norg_table = {
+                install_info = {
+                    url = "https://github.com/nvim-neorg/tree-sitter-norg-table",
+                    files = { "src/parser.c" },
+                    branch = "main"
+                },
+            }
+
+            require('nvim-treesitter.install').update { 'norg', 'norg_meta', 'norg_table' }
+
             require('neorg').setup {
                 load = {
                     ["core.defaults"] = {},
@@ -734,15 +860,73 @@ require('packer').startup(function()
             }
         end,
     }
+
     use {
         'simnalamburt/vim-mundo',
+        cmd = 'MundoToggle',
         config = function()
             vim.g.mundo_right = 1
         end
     }
+
     use {
         'nvim-telescope/telescope-symbols.nvim',
-        requires = 'nvim-telescope/telescope.nvim'
+        requires = 'nvim-telescope/telescope.nvim',
+        after = 'telescope.nvim'
+    }
+
+    use {
+        'ojroques/vim-oscyank',
+        config = function()
+            vim.api.nvim_create_autocmd('TextYankPost', {
+                callback = function()
+                    if vim.v.event.regname == '+' then
+                        vim.cmd 'OSCYankReg +'
+                    end
+                end
+            })
+        end
+    }
+
+    use {
+        'rmagatti/auto-session',
+        config = function()
+            vim.o.sessionoptions="blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal"
+
+            function restore_nvim_tree()
+                if vim.fn.bufexists('NvimTree_1') == 1 then
+                    require('nvim-tree').open()
+                end
+            end
+
+            function close_dapui()
+                if not packer_plugins['dapui'] or not packer_plugins['dapui'].loaded then
+                    return
+                end
+                local dapui = require('dapui')
+                dapui.close()
+            end
+
+            require('auto-session').setup {
+                log_level = 'info',
+                auto_session_suppress_dirs = { '~/' },
+                auto_session_enable_last_session = false,
+                auto_save_enabled = true,
+                auto_restore_enabled = false,
+                pre_save_cmds = { close_dapui },
+                post_restore_cmds = { restore_nvim_tree },
+            }
+        end
+    }
+
+    use {
+        'Darazaki/indent-o-matic',
+        config = function()
+            require('indent-o-matic').setup {
+            max_lines = 2048,
+            standard_widths = { 2, 4, 8 },
+        }
+        end
     }
 
     use {
@@ -759,25 +943,18 @@ require('packer').startup(function()
             local dapui = require('dapui')
             local hop = require('hop')
 
-            function close_buffer(name)
-                local nr = vim.fn.bufnr(name)
-                if nr > 0 then
-                    vim.cmd('bw ' .. nr)
-                end
-            end
-
-            function SaveSession()
-                close_buffer('NvimTree')
-                close_buffer('DAP Scopes')
-                close_buffer('DAP Breakpoints')
-                close_buffer('DAP Stacks')
-                close_buffer('DAP Watches')
-                close_buffer('[dap-repl]')
-                vim.cmd('SessionSave')
-            end
-
             local wk = require('which-key')
-            wk.setup()
+
+            wk.setup {
+                plugins = {
+                    marks = true,
+                    registers = true,
+                    spelling = {
+                        enabled = true,
+                    }
+                }
+            }
+
             wk.register {
                 -- buffers
                 ['<m-q>'] = { '<cmd>BufferClose<cr>', 'Close Buffer' },
@@ -813,8 +990,9 @@ require('packer').startup(function()
                 -- sessions
                 ['<leader>S'] = {
                     name = 'Sessions',
-                    s = { SaveSession, 'Save Session' },
-                    l = { '<cmd>SessionLoad<cr>', 'Load Session' },
+                    s = { '<cmd>SaveSession<cr>', 'Save Session' },
+                    l = { '<cmd>RestoreSession<cr>', 'Load Session' },
+                    d = { '<cmd>DeleteSession<cr>', 'Delete Session' },
                 },
                 -- Telescope
                 ['<leader>f'] = {
@@ -857,8 +1035,8 @@ require('packer').startup(function()
                     u = { '<cmd>MundoToggle<cr>', 'Toggle Undo Tree' },
                     s = { '<cmd>SymbolsOutline<cr>', 'Toggle Symbols Outline' },
                     g = { '<cmd>Neogit kind=split<cr>', 'Neogit' },
-                    d = { '<cmd>TroubleToggle lsp_document_diagnostics<cr>', 'Document Diagnostics' },
-                    D = { '<cmd>TroubleToggle lsp_workspace_diagnostics<cr>', 'Workspace Diagnostics' },
+                    d = { '<cmd>TroubleToggle document_diagnostics<cr>', 'Document Diagnostics' },
+                    D = { '<cmd>TroubleToggle workspace_diagnostics<cr>', 'Workspace Diagnostics' },
                 },
                 -- debug
                 ['<leader>d'] = {
@@ -880,9 +1058,6 @@ require('packer').startup(function()
                 -- move line
                 ['<m-c-k>'] = { ':m -2<cr>==', 'Move line up' },
                 ['<m-c-j>'] = { ':m +1<cr>==', 'Move line down' },
-                -- which-key.nvim doesn't seem to support multiple mappings with same key
-                --['<m-c-k>'] = { ':m \'<-2<cr>gv=gv', 'Move lines up', mode = 'v' },
-                --['<m-c-j>'] = { ':m \'>+1<cr>gv=gv', 'Move lines up', mode = 'v' },
                 -- other
                 ['Y'] = { 'y$', 'Yank to end', noremap = false },
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -897,32 +1072,29 @@ require('packer').startup(function()
                 ['Ö'] = { '{', '', noremap = false },
                 ['Ä'] = { '}', '', noremap = false },
             }
+
+            wk.register({
+                -- move line
+                ['<m-c-k>'] = { ':m \'<-2<cr>gv=gv', 'Move lines up' },
+                ['<m-c-j>'] = { ':m \'>+1<cr>gv=gv', 'Move lines up' },
+                -- OSCYank
+                ['<leader>y'] = { ':OSCYank<cr>', 'OSC52 Yank' },
+            }, { mode = 'v' })
         end
     }
 end)
 
+--- -----------------------
+---        AUTOCMDS
+--- -----------------------
 -- automatically call PackerCompile if init.lua was edited
 local config_file = vim.fn.stdpath('config')..'/init.lua'
 local compile_file = vim.fn.stdpath('config')..'/plugin/packer_compiled.lua'
 if (vim.fn.filereadable(config_file) and vim.fn.filereadable(compile_file) and vim.fn.getftime(config_file) > vim.fn.getftime(compile_file))
 then
-    vim.cmd [[ PackerCompile ]]
+    require('packer').compile()
 end
 
---- -----------------------
----       FUNCTIONS
---- -----------------------
-vim.cmd [[
-function! g:Clang_format()
-    if &filetype == 'cpp' && filereadable('.clang-format') && executable('clang-format')
-        Neoformat clangformat
-    endif
-endfunction
-]]
-
---- -----------------------
----        AUTOCMDS
---- -----------------------
 --- Remove trailing spaces
 vim.cmd [[autocmd BufWritePre * %s/\s\+$//e]]
 
@@ -930,15 +1102,18 @@ vim.cmd [[autocmd BufWritePre * %s/\s\+$//e]]
 vim.cmd [[autocmd BufWinEnter,WinEnter term://* startinsert]]
 
 --- Format code on save
-vim.cmd [[
-augroup fmt
-    autocmd!
-    autocmd BufWritePre * call g:Clang_format()
-augroup END
-]]
+vim.api.nvim_create_augroup('fmt', { clear = true })
+vim.api.nvim_create_autocmd("BufWritePre", {
+    group = 'fmt',
+    callback = function()
+        if vim.bo.filetype == 'cpp' and vim.fn.filereadable('.clang-format') == 1 then
+            vim.lsp.buf.formatting_sync(nil, 1000)
+        end
+    end
+})
 
 --- auto-close NvimTree
-vim.cmd [[autocmd BufEnter * ++nested if winnr('$') == 1 && bufname() == 'NvimTree_' . tabpagenr() | quit | endif]]
+--vim.cmd [[autocmd BufEnter * ++nested if winnr('$') == 1 && bufname() == 'NvimTree_' . tabpagenr() | quit | endif]]
 
 --- -----------------------
 ---     CONFIGURATION
@@ -961,7 +1136,6 @@ vim.opt.title = true
 vim.opt.guifont = 'JetbrainsMono Nerd Font:h10'
 vim.opt.background = 'dark'
 vim.opt.undofile = true
-vim.opt.undodir = vim.fn.getenv('HOME') .. '/.local/share/nvim/undo'
 vim.opt.switchbuf:append('useopen')
 vim.opt.list = true
 vim.opt.listchars = 'tab:>-,trail:-,nbsp:+'
@@ -977,9 +1151,11 @@ vim.g.bufferline = {
     closable = false
 }
 
-
--- TODO: Remove when which-key.nvim supports mappings with same keys for multiple modes
-vim.cmd [[
-vnoremap <m-c-k> :m '<-2<cr>gv=gv
-vnoremap <m-c-j> :m '>+1<cr>gv=gv
-]]
+vim.api.nvim_create_autocmd('TextYankPost', {
+    callback = function()
+        vim.highlight.on_yank {
+            higroup=(vim.fn['hlexists']('HighlightedyankRegion') > 0 and 'HighlightedyankRegion' or 'IncSearch'),
+            timeout=200
+        }
+    end
+})
