@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+set -o pipefail
 
 trap "exit" INT
 
@@ -21,11 +21,12 @@ pkglist=(
     "pipewire-alsa"
     "dunst"
     "wl-clipboard"
+    "xdg-desktop-portal-wlr"
+    "noto-fonts"
 
     # other applications
     "neovim"
     "firefox"
-    "lf"
     "zathura"
     "zathura-pdf-mupdf"
     "git"
@@ -38,6 +39,9 @@ pkglist=(
 
 aurpkgs=(
     "nerd-fonts-jetbrains-mono"
+    "gruvbox-material-gtk-theme-git"
+    "gruvbox-material-icon-theme-git"
+    "lf"
 )
 
 install_git() {

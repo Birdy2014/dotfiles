@@ -6,7 +6,7 @@
     min-height: 0;
 }
 
-@define-color color-bg #282828;
+@define-color color-bg #1d2021;
 @define-color color-fg #d4be98;
 @define-color color-blue #7daea3;
 @define-color color-aqua #89b482;
@@ -17,7 +17,6 @@
 @define-color color-green #a9b665;
 @define-color color-red #ea6962;
 @define-color color-red-dark #c14a4a;
-@define-color color-black #1d2021;
 
 window#waybar {
     background-color: @color-bg;
@@ -173,7 +172,7 @@ label:focus {
 }
 
 #temperature {
-    background-color: @color-yellow;
+    color: @color-yellow;
 }
 
 #temperature.critical {

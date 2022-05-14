@@ -334,12 +334,26 @@ index e47e079..4e6afde 100644
                 end
             end
 
-            local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver' }
-            for _, lsp in ipairs(servers) do
-                lspconfig[lsp].setup {
-                    capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities()),
-                    on_attach = on_lsp_attach
+            local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver', 'bashls' }
+
+            local server_config = {
+                rust_analyzer = {
+                    ['rust-analyzer'] = {
+                        checkOnSave = {
+                            command = 'clippy',
+                            --extraArgs = { '--offline' }
+                        }
+                    }
                 }
+            }
+
+            for _, lsp in ipairs(servers) do
+                local conf = {
+                    capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities()),
+                    on_attach = on_lsp_attach,
+                    settings = server_config[lsp] or {}
+                }
+                lspconfig[lsp].setup(conf)
             end
 
             lspconfig.texlab.setup {
@@ -372,12 +386,15 @@ index e47e079..4e6afde 100644
                 ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'comment', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
-                    additional_vim_regex_highlighting = false,
+                    additional_vim_regex_highlighting = true, -- Needed for spellchecker to distinguish between code and comment
                 },
                 indent = {
                     enable = false
                 }
             }
+
+            vim.wo.foldmethod = 'expr'
+            vim.wo.foldexpr = 'nvim_treesitter#foldexpr()'
         end
     }
 
@@ -1145,6 +1162,7 @@ vim.opt.breakindent = true
 vim.opt.breakindentopt = 'sbr'
 vim.opt.showbreak = '↪ '
 vim.opt.scrolloff = 1
+vim.opt.foldlevel = 99
 
 -- TODO: Put this back into packer config. This crashes barbar on PackerCompile
 vim.g.bufferline = {

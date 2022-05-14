@@ -3,7 +3,7 @@
     "position": "top",
     "height": 25,
     "modules-left": ["sway/workspaces", "sway/mode"],
-    "modules-right": ["custom/playerctl", "idle_inhibitor", "custom/calendar", "pulseaudio", "network", "cpu", "memory", "temperature", "backlight", "battery", "clock", "tray"],
+    "modules-right": ["custom/playerctl", "idle_inhibitor", "custom/idle_inhibited", "custom/calendar", "pulseaudio", "network", "cpu", "memory", "temperature", "backlight", "battery", "clock", "tray"],
     // Modules configuration
     "sway/workspaces": {
         "disable-scroll": true,
@@ -42,6 +42,10 @@
     "custom/calendar": {
         "exec": "~/.config/waybar/scripts/calendar.sh",
         "interval": 600
+    },
+    "custom/idle_inhibited": {
+        "exec": "~/.config/waybar/scripts/idle_inhibited.sh",
+        "interval": 2
     },
     "idle_inhibitor": {
         "format": "{icon}",

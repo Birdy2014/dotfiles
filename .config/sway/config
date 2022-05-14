@@ -17,7 +17,8 @@ set $mod Mod4
 set $term kitty
 set $launcher rofi -show combi
 set $file-manager PYTHONWARNINGS="ignore" $term ranger
-set $font "JetbrainsMono Nerd Font"
+#set $file-manager $term lf
+set $font "NotoSans"
 set $cursor-theme LyraX-cursors
 set $gtk-theme "Gruvbox-Material-Dark"
 set $gtk-icon-theme "Gruvbox-Material-Dark"
@@ -37,7 +38,7 @@ set $ws10 10
 # Colors
 set $color-accent #45403d
 set $color-bg #32302f
-set $color-bg-dark #282828
+set $color-bg-dark #1d2021
 set $color-fg #d4be98
 
 # -----
@@ -118,6 +119,7 @@ for_window [class="Steam"] inhibit_idle none
 for_window [class="steam_app"] inhibit_idle open
 for_window [class="steam_app" title="Origin"] floating enable
 for_window [class="Birdy3d"] floating enable
+for_window [app_id="thunderbird" title=".*Erinnerung(en)?$"] floating enable
 
 # --------
 # Keybinds
@@ -227,6 +229,6 @@ exec swayidle -w \
     before-sleep 'swaylock -f -c 282828' \
     lock 'swaylock -f -c 282828'
 
-exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP=sway
 
 exec kdeconnect-indicator
