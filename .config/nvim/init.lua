@@ -104,6 +104,22 @@ index e47e079..4e6afde 100644
             'arkav/lualine-lsp-progress'
         },
         config = function()
+            local function package_info_status()
+                local status = require('package-info').get_status()
+                if status == ' ' then
+                    return ''
+                end
+                return status
+            end
+
+            local function lsp_client_names()
+                local client_names = {}
+                for _, client in ipairs(vim.lsp.get_active_clients()) do
+                    table.insert(client_names, client.name)
+                end
+                return table.concat(client_names, ",")
+            end
+
             local lualine = require('lualine')
             lualine.setup {
                 options = {
@@ -115,7 +131,7 @@ index e47e079..4e6afde 100644
                 sections = {
                     lualine_a = { {'mode', upper = true} },
                     lualine_b = { {'branch', icon = ''}, { 'diff' } },
-                    lualine_c = { { 'diagnostics', sources = { 'nvim_diagnostic' } }, { 'lsp_progress' }, {'filename', file_status = true} },
+                    lualine_c = { { 'filename', file_status = true }, { 'diagnostics', sources = { 'nvim_diagnostic' } }, { lsp_client_names }, { 'lsp_progress' }, { package_info_status } },
                     lualine_x = { 'encoding', 'fileformat', 'filetype' },
                     lualine_y = { 'progress' },
                     lualine_z = { 'location'  },
@@ -134,7 +150,6 @@ index e47e079..4e6afde 100644
         'kyazdani42/nvim-tree.lua',
         requires = 'kyazdani42/nvim-web-devicons',
         config = function()
-            vim.g.nvim_tree_git_hl = 1
             vim.api.nvim_create_autocmd('BufWinEnter', {
                 pattern = 'NvimTree*',
                 callback = function()
@@ -209,6 +224,9 @@ index e47e079..4e6afde 100644
                             { key = "g?",                           cb = tree_cb("toggle_help") },
                         }
                     }
+                },
+                renderer = {
+                    highlight_git = true,
                 }
             }
         end
@@ -381,6 +399,7 @@ index e47e079..4e6afde 100644
     use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate',
+        requires = 'nvim-treesitter/nvim-treesitter-refactor',
         config = function()
             require('nvim-treesitter.configs').setup {
                 ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'comment', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
@@ -390,11 +409,50 @@ index e47e079..4e6afde 100644
                 },
                 indent = {
                     enable = false
+                },
+                refactor = {
+                    highlight_definitions = {
+                        enable = true,
+                        clear_on_cursor_move = true,
+                    },
+                    --highlight_current_scope = { enable = true }, -- Maybe enable when #31 is merged
                 }
             }
 
             vim.wo.foldmethod = 'expr'
             vim.wo.foldexpr = 'nvim_treesitter#foldexpr()'
+        end
+    }
+
+    use {
+        'nvim-treesitter/nvim-treesitter-context',
+        config = function()
+            require('treesitter-context').setup {
+                enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
+                max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
+                patterns = { -- Match patterns for TS nodes. These get wrapped to match at word boundaries.
+                    -- For all filetypes
+                    -- Note that setting an entry here replaces all other patterns for this entry.
+                    -- By setting the 'default' entry below, you can control which nodes you want to
+                    -- appear in the context window.
+                    default = {
+                        'class',
+                        'function',
+                        'method',
+                        -- 'for', -- These won't appear in the context
+                        -- 'while',
+                        -- 'if',
+                        -- 'switch',
+                        -- 'case',
+                    },
+                },
+                exact_patterns = {
+                    -- Example for a specific filetype with Lua patterns
+                    -- Treat patterns.rust as a Lua pattern (i.e "^impl_item$" will
+                    -- exactly match "impl_item" only)
+                    -- rust = true,
+                },
+            }
         end
     }
 
@@ -473,6 +531,24 @@ index e47e079..4e6afde 100644
                 TypeParameter = "",
             }
 
+            local mapping_tab = function(fallback)
+                if cmp.visible() then
+                    cmp.select_next_item()
+                elseif has_words_before() then
+                    cmp.complete()
+                else
+                    fallback()
+                end
+            end
+
+            local mapping_shift_tab = function(fallback)
+                if cmp.visible() then
+                    cmp.select_prev_item()
+                else
+                    fallback()
+                end
+            end
+
             cmp.setup({
                 completion = {
                     completeopt = 'menuone,noselect',
@@ -484,29 +560,13 @@ index e47e079..4e6afde 100644
                     end,
                 },
                 mapping = {
-                    ['<C-d>'] = cmp.mapping.scroll_docs(-4),
-                    ['<C-f>'] = cmp.mapping.scroll_docs(4),
+                    ['<C-u>'] = cmp.mapping.scroll_docs(-4),
+                    ['<C-d>'] = cmp.mapping.scroll_docs(4),
                     ['<C-e>'] = cmp.mapping.close(),
                     ['<C-Space>'] = cmp.mapping.complete(),
                     ['<CR>'] = cmp.mapping.confirm({ select = true }),
-
-                    ["<Tab>"] = cmp.mapping(function(fallback)
-                        if cmp.visible() then
-                            cmp.select_next_item()
-                        elseif has_words_before() then
-                            cmp.complete()
-                        else
-                            fallback()
-                        end
-                    end, { "i", "s" }),
-
-                    ["<S-Tab>"] = cmp.mapping(function(fallback)
-                        if cmp.visible() then
-                            cmp.select_prev_item()
-                        else
-                            fallback()
-                        end
-                    end, { "i", "s" }),
+                    ["<Tab>"] = cmp.mapping(mapping_tab, { "i", "s" }),
+                    ["<S-Tab>"] = cmp.mapping(mapping_shift_tab, { "i", "s" }),
                 },
                 sources = {
                     { name = 'calc' },
@@ -562,6 +622,11 @@ index e47e079..4e6afde 100644
             })
 
             cmp.setup.cmdline('/', {
+                mapping = {
+                    ['<CR>'] = cmp.mapping.confirm({ select = true }),
+                    ["<Tab>"] = cmp.mapping(mapping_tab, { "c" }),
+                    ["<S-Tab>"] = cmp.mapping(mapping_shift_tab, { "c" }),
+                },
                 sources = {
                     {
                         name = 'buffer',
@@ -579,8 +644,13 @@ index e47e079..4e6afde 100644
             })
 
             cmp.setup.cmdline(':', {
+                mapping = {
+                    ['<CR>'] = cmp.mapping.confirm({ select = true }),
+                    ["<Tab>"] = cmp.mapping(mapping_tab, { "c" }),
+                    ["<S-Tab>"] = cmp.mapping(mapping_shift_tab, { "c" }),
+                },
                 sources = {
-                    { name = 'path' },
+                    --{ name = 'path' },
                     { name = 'cmdline' }
                 }
             })
@@ -754,6 +824,14 @@ index e47e079..4e6afde 100644
         requires = 'mfussenegger/nvim-dap',
         config = function()
             require('nvim-dap-virtual-text').setup()
+        end
+    }
+
+    use {
+        "vuki656/package-info.nvim",
+        requires = "MunifTanjim/nui.nvim",
+        config = function()
+            require('package-info').setup()
         end
     }
 
@@ -1034,16 +1112,6 @@ index e47e079..4e6afde 100644
                 },
                 ['[d'] = { vim.diagnostic.goto_prev, 'Previous Diagnostic' },
                 [']d'] = { vim.diagnostic.goto_next, 'Next Diagnostic' },
-                -- terminal
-                ['<esc><esc>'] = { '<c-bslash><c-n>', 'Exit Terminal Mode', mode = 't' },
-                ['<c-h>'] = { '<c-bslash><c-n><cmd>TmuxNavigateLeft<cr>', 'Window Left', mode = 't' },
-                ['<c-j>'] = { '<c-bslash><c-n><cmd>TmuxNavigateDown<cr>', 'Window Down', mode = 't' },
-                ['<c-k>'] = { '<c-bslash><c-n><cmd>TmuxNavigateUp<cr>', 'Window Up', mode = 't' },
-                ['<c-l>'] = { '<c-bslash><c-n><cmd>TmuxNavigateRight<cr>', 'Window Right', mode = 't' },
-                ['<a-k>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferPrevious<cr>" : "")', 'Previous Buffer', mode = 't', expr = true },
-                ['<a-j>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferNext<cr>" : "")', 'Next Buffer', mode = 't', expr = true },
-                ['<a-q>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferClose!<cr>" : "<c-bslash><c-n>:bd!<cr>")', 'Close Buffer', mode = 't', expr = true },
-                ['<a-Q>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferClose!<cr>" : "<c-bslash><c-n>:bd!<cr>")', 'Close Buffer', mode = 't', expr = true },
                 -- toggle
                 ['<leader>t'] = {
                     name = 'Toggle',
@@ -1080,8 +1148,6 @@ index e47e079..4e6afde 100644
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
                 ['k'] = { '(v:count == 0 ? "gk" : "k")', 'Up', expr = true },
                 ['j'] = { '(v:count == 0 ? "gj" : "j")', 'Down', expr = true },
-                ['<'] = { '<gv', 'Unindent', mode = 'v' },
-                ['>'] = { '>gv', 'Indent', mode = 'v' },
                 ['ö'] = { '[', '', noremap = false },
                 ['ä'] = { ']', '', noremap = false },
                 ['öö'] = { '[[', '' },
@@ -1096,7 +1162,29 @@ index e47e079..4e6afde 100644
                 ['<m-c-j>'] = { ':m \'>+1<cr>gv=gv', 'Move lines up' },
                 -- OSCYank
                 ['<leader>y'] = { ':OSCYank<cr>', 'OSC52 Yank' },
+                -- Other
+                ['<'] = { '<gv', 'Unindent' },
+                ['>'] = { '>gv', 'Indent' },
+                ['ö'] = { '[', '', noremap = false },
+                ['ä'] = { ']', '', noremap = false },
+                ['öö'] = { '[[', '' },
+                ['ää'] = { ']]', '' },
+                ['Ö'] = { '{', '', noremap = false },
+                ['Ä'] = { '}', '', noremap = false },
             }, { mode = 'v' })
+
+                -- terminal
+            wk.register({
+                ['<esc><esc>'] = { '<c-bslash><c-n>', 'Exit Terminal Mode' },
+                ['<c-h>'] = { '<c-bslash><c-n><cmd>TmuxNavigateLeft<cr>', 'Window Left' },
+                ['<c-j>'] = { '<c-bslash><c-n><cmd>TmuxNavigateDown<cr>', 'Window Down' },
+                ['<c-k>'] = { '<c-bslash><c-n><cmd>TmuxNavigateUp<cr>', 'Window Up' },
+                ['<c-l>'] = { '<c-bslash><c-n><cmd>TmuxNavigateRight<cr>', 'Window Right' },
+                ['<m-k>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferPrevious<cr>" : "")', 'Previous Buffer' },
+                ['<m-j>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferNext<cr>" : "")', 'Next Buffer' },
+                ['<m-q>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferClose!<cr>" : "<c-bslash><c-n>:bd!<cr>")', 'Close Buffer' },
+                ['<m-Q>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferClose!<cr>" : "<c-bslash><c-n>:bd!<cr>")', 'Close Buffer' },
+            }, { mode = 't' })
         end
     }
 end)
@@ -1163,6 +1251,8 @@ vim.opt.breakindentopt = 'sbr'
 vim.opt.showbreak = '↪ '
 vim.opt.scrolloff = 1
 vim.opt.foldlevel = 99
+vim.opt.laststatus = 3
+vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions
 
 -- TODO: Put this back into packer config. This crashes barbar on PackerCompile
 vim.g.bufferline = {
