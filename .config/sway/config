@@ -9,6 +9,7 @@
 # - brightnessctl
 
 include /etc/sway/config.d/*
+include ~/.config/sway/conf.d/*
 
 # ---------
 # Variables
@@ -58,15 +59,6 @@ input type:touchpad {
 
 # Hide cursor after 5 seconds of inactivity
 seat seat0 hide_cursor 5000
-
-# ------
-# Output
-# ------
-output "Unknown U34G2G4R3 0x00001553" {
-    adaptive_sync on
-    mode 3440x1440@140Hz
-    bg ~/.config/sway/bgimage fill
-}
 
 # ----------
 # Status Bar
@@ -221,10 +213,15 @@ bindsym Control+Mod4+Mod1+r exec systemctl reboot
 # ---------
 exec dunst
 
+# dpms while screensaver is active
+# dpms while screensaver is inactive
+# screen locking
 exec swayidle -w \
-    timeout 300 'swaymsg "output * dpms off"' \
+    timeout 10 'pgrep swaylock && swaymsg "output * dpms off"' \
+    resume 'pgrep swaylock && swaymsg "output * dpms on"' \
+    timeout 600 'swaymsg "output * dpms off"' \
     resume 'swaymsg "output * dpms on"' \
-    timeout 305 'swaylock -f -c 282828' \
+    timeout 605 'swaylock -f -c 282828' \
     before-sleep 'playerctl pause' \
     before-sleep 'swaylock -f -c 282828' \
     lock 'swaylock -f -c 282828'

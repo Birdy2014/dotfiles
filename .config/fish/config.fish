@@ -1,15 +1,12 @@
-fish_add_path -p $HOME/.cargo/bin
+fish_add_path -p $HOME/.local/share/cargo/bin
 fish_add_path -p $HOME/.local/bin
 
 set -gx EDITOR /usr/bin/nvim
 set -gx VISUAL /usr/bin/nvim
 
-set -gx XDG_CONFIG_HOME $HOME/.config
-set -gx XDG_CACHE_HOME $HOME/.cache
-set -gx XDG_DATA_HOME $HOME/.local/share
-
 if status is-interactive
     set fish_greeting
+    fish_vi_key_bindings
 
     if not test -d "$HOME/.local/share/omf"
         curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install > /tmp/install-omf
@@ -36,7 +33,6 @@ if status is-login
         # enable wayland in applications
         set -gx _JAVA_AWT_WM_NONREPARENTING 1
         set -gx MOZ_ENABLE_WAYLAND 1
-        #set -gx SDL_VIDEODRIVER wayland # Breaks games
 
         # theming
         set -gx XCURSOR_THEME LyraX
@@ -46,7 +42,6 @@ if status is-login
 
         # workarounds
         set -gx WLR_NO_HARDWARE_CURSORS 1 # Workaround for invisible cursor on nvidia
-        #set -gx MOZ_WEBRENDER 0 # Workaround for firefox freezing when opening multiple windows
 
         exec sway --unsupported-gpu
     end

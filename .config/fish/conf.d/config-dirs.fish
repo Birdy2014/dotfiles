@@ -1,3 +1,7 @@
+set -gx XDG_CONFIG_HOME $HOME/.config
+set -gx XDG_CACHE_HOME $HOME/.cache
+set -gx XDG_DATA_HOME $HOME/.local/share
+
 set -gx CARGO_HOME "$XDG_DATA_HOME"/cargo
 set -gx CUDA_CACHE_PATH "$XDG_CACHE_HOME"/nv
 set -gx GNUPGHOME "$XDG_DATA_HOME"/gnupg

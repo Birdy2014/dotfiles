@@ -15,7 +15,6 @@ pkglist=(
     "swaylock"
     "xorg-xwayland"
     "waybar"
-    "rofi"
     "pipewire"
     "pipewire-pulse"
     "pipewire-alsa"
@@ -39,6 +38,7 @@ pkglist=(
 
 aurpkgs=(
     "nerd-fonts-jetbrains-mono"
+    "rofi-lbonn-wayland"
     "gruvbox-material-gtk-theme-git"
     "gruvbox-material-icon-theme-git"
     "lf"
@@ -70,9 +70,7 @@ install_packages() {
     sudo pacman --noconfirm --needed -S ${pkglist[*]}
 
     echo "Installing AUR packages..."
-    for pkgname in $aurpkgs; do
-        pacman -Qi $pkgname > /dev/null || yay --noconfirm -S $pkgname
-    done
+    yay --noconfirm --needed -S ${aurpkgs[*]}
 }
 
 setup_dotfiles() {
