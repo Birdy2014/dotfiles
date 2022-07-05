@@ -2,7 +2,7 @@
     border: none;
     border-radius: 0;
     font-family: "JetBrainsMono Nerd Font", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 13px;
+    font-size: 12px;
     min-height: 0;
 }
 
@@ -32,7 +32,7 @@ window#waybar.hidden {
 /* --- Workspaces --- */
 
 #workspaces button {
-    padding: 0 5px;
+    padding: 0 4px;
     background-color: transparent;
     /*color: #ffffff;*/
     /*box-shadow: inset 0 -3px #ffffff;*/
@@ -61,7 +61,8 @@ window#waybar.hidden {
 }
 
 #mode {
-    background-color: #64727D;
+    /*background-color: #64727D;*/
+    background-color: @color-fg;
     border-bottom: 3px solid #ffffff;
 }
 
@@ -69,7 +70,6 @@ window#waybar.hidden {
 #battery,
 #cpu,
 #memory,
-#disk,
 #temperature,
 #backlight,
 #network,
@@ -106,8 +106,16 @@ window#waybar.hidden {
     color: @color-fg;
 }
 
-#battery.charging, #battery.plugged {
+#battery.charging, #battery.plugged, #battery.good {
     color: @color-green;
+}
+
+#battery.ok:not(.charging) {
+    color: @color-yellow-dark;
+}
+
+#battery.warning:not(.charging) {
+    color: @color-red;
 }
 
 @keyframes blink {

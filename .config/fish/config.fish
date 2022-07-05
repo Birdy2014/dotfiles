@@ -25,13 +25,11 @@ end
 
 if status is-login
     if test (tty) = "/dev/tty1"
-        exec startx
-    else if test (tty) = "/dev/tty2"
         set -gx XDG_CURRENT_DESKTOP sway
         set -gx XDG_SESSION_DESKTOP sway
+        set -gx XDG_SESSION_TYPE wayland
 
         # enable wayland in applications
-        set -gx _JAVA_AWT_WM_NONREPARENTING 1
         set -gx MOZ_ENABLE_WAYLAND 1
 
         # theming
@@ -41,9 +39,12 @@ if status is-login
         set -gx QT_QPA_PLATFORMTHEME qt5ct
 
         # workarounds
+        set -gx _JAVA_AWT_WM_NONREPARENTING 1
         set -gx WLR_NO_HARDWARE_CURSORS 1 # Workaround for invisible cursor on nvidia
 
         exec sway --unsupported-gpu
+    else if test (tty) = "/dev/tty2"
+        exec startx
     end
 end
 

@@ -19,7 +19,7 @@ while [ $# -gt 0 ]; do
         *.zip)
             unzip "$1" -d "$dir";;
         *.7z)
-            7za x "$1";;
+            7za -y x "$1";;
         *)
             echo "Cannot extract file: $1" >&2;;
     esac

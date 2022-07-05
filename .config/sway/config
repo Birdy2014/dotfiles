@@ -17,8 +17,7 @@ include ~/.config/sway/conf.d/*
 set $mod Mod4
 set $term kitty
 set $launcher rofi -show combi
-set $file-manager PYTHONWARNINGS="ignore" $term ranger
-#set $file-manager $term lf
+set $file-manager $term lf
 set $font "NotoSans"
 set $cursor-theme LyraX-cursors
 set $gtk-theme "Gruvbox-Material-Dark"
@@ -50,11 +49,13 @@ input type:keyboard {
     xkb_variant "nodeadkeys"
     xkb_options "caps:escape"
     xkb_model "pc101"
+    repeat_delay 660
+    repeat_rate 25
 }
 
 input type:touchpad {
     tap enabled
-    natural_scroll enabled
+    natural_scroll disabled
 }
 
 # Hide cursor after 5 seconds of inactivity
@@ -80,10 +81,12 @@ client.unfocused        $color-bg-dark  $color-bg-dark    $color-fg   #ffffff   
 # -------------
 # Other theming
 # -------------
-font $font 10
+font "pango:$font 10"
 smart_gaps on
 smart_borders on
 gaps inner 5
+titlebar_border_thickness 0
+titlebar_padding 2 2
 seat seat0 xcursor_theme $cursor-theme 24
 
 exec_always {
@@ -157,8 +160,8 @@ bindsym --locked XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ 
 bindsym --locked XF86AudioPlay exec playerctl play-pause
 bindsym --locked XF86AudioPrev exec playerctl previous
 bindsym --locked XF86AudioNext exec playerctl next
-bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
-bindsym XF86MonBrightnessUp exec brightnessctl set +5%
+bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%-
+bindsym --locked XF86MonBrightnessUp exec brightnessctl set +5%
 
 # Start Applications
 bindsym $mod+Return exec $term
@@ -228,4 +231,5 @@ exec swayidle -w \
 
 exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP=sway
 
-exec kdeconnect-indicator
+exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+exec wlsunset

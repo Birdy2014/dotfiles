@@ -22,6 +22,7 @@ pkglist=(
     "wl-clipboard"
     "xdg-desktop-portal-wlr"
     "noto-fonts"
+    "polkit-gnome"
 
     # other applications
     "neovim"
@@ -42,6 +43,7 @@ aurpkgs=(
     "gruvbox-material-gtk-theme-git"
     "gruvbox-material-icon-theme-git"
     "lf"
+    "wlsunset"
 )
 
 install_git() {

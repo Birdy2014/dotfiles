@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+
+set -o noclobber -o noglob -o nounset -o pipefail
+
+FILE_PATH="$1"
+W=$2
+H=$3
+X=$4
+Y=$5
+
+MAX_IMAGE_WIDTH=1280
+
+display_image() {
+    local image="$1"
+    if [[ "$TERM" =~ .*kitty.* ]]; then
+        kitty +icat --silent --transfer-mode file --place "${W}x${H}@${X}x${Y}" "$image"
+    elif command -v chafa &>/dev/null; then
+        chafa --fill=block --symbols=block -c 256 --size "${W}x${H}" "$image" 2>/dev/null
+    else
+        echo 'supported image preview methods: kitty, chafa'
+    fi
+}
+
+display_image_inplace() {
+    display_image "$FILE_PATH"
+}
+
+display_image_cache() {
+    display_image "$IMAGE_CACHE_PATH"
+}
+
+LF_CACHE="$HOME/.cache/lf_images"
+[[ -d "$LF_CACHE" ]] || mkdir -p "$LF_CACHE"
+
+# Use hash of absolute path and compare change time
+IMAGE_CACHE_PATH="$LF_CACHE/$(echo "$FILE_PATH" | sha1sum | cut -f1 -d' ').jpg"
+
+if [[ -f "$IMAGE_CACHE_PATH" ]]; then
+    [[ $(stat -c '%W' "$FILE_PATH") < $(stat -c '%W' "$IMAGE_CACHE_PATH") ]] && display_image_cache && exit 1
+fi
+
+handle_mime() {
+    local mimetype="$(file --dereference --brief --mime-type -- "${FILE_PATH}")"
+    case "${mimetype}" in
+        ## HTML
+        text/html)
+            # Preview as text conversion
+            w3m -dump "${FILE_PATH}" && exit 1
+            lynx -dump -- "${FILE_PATH}" && exit 1
+            elinks -dump "${FILE_PATH}" && exit 1
+            exit 1;;
+
+        ## Text
+        text/* | */xml | application/json)
+            # Syntax highlight
+            highlight --out-format=ansi "${FILE_PATH}" && exit 1
+            cat "${FILE_PATH}" && exit 1
+            exit 1;;
+
+        ## PDF
+        application/pdf)
+            pdftoppm -f 1 -l 1 \
+                -singlefile \
+                -jpeg -tiffcompression jpeg \
+                -- "${FILE_PATH}" "${IMAGE_CACHE_PATH}" &&
+            mv "${IMAGE_CACHE_PATH}.jpg" "${IMAGE_CACHE_PATH}" &&
+            display_image_cache
+            exit 1;;
+
+        ## SVG
+        image/svg+xml|image/svg)
+            convert -- "${FILE_PATH}" "${IMAGE_CACHE_PATH}" && display_image_cache
+            exit 1;;
+
+        ## Image
+        image/*)
+            local image_width="$(identify -format '%w %h' "$FILE_PATH")"
+            if [[ "$image_width" < "$MAX_IMAGE_WIDTH" ]]; then
+                display_image_inplace
+            else
+                convert -geometry "$MAX_IMAGE_WIDTH"x -- "${FILE_PATH}" "${IMAGE_CACHE_PATH}" && display_image_cache
+            fi
+            exit 1;;
+
+        ## Video
+        video/*)
+            # Get embedded thumbnail
+            ffmpeg -i "${FILE_PATH}" -map 0:v -map -0:V -c copy "${IMAGE_CACHE_PATH}" && display_image_cache && exit 1
+
+            # Get frame 10% into video
+            local video_width=$(ffprobe -v error -show_entries stream=width -of default=nw=1:nk=1 "${FILE_PATH}")
+            local width=$((video_width>MAX_IMAGE_WIDTH ? max_width : video_width))
+            ffmpegthumbnailer -i "${FILE_PATH}" -o "${IMAGE_CACHE_PATH}" -s ${width} && display_image_cache && exit 1
+            exit 1;;
+
+        ## Audio
+        audio/*)
+            # Get embedded thumbnail
+            ffmpeg -i "${FILE_PATH}" -map 0:v -map -0:V -c copy \
+              "${IMAGE_CACHE_PATH}" && display_image_cache && exit 1
+            exit 1;;
+
+        ## OpenDocument
+        application/vnd.oasis.opendocument*)
+            # Preview as text conversion
+            odt2txt "${FILE_PATH}"
+            exit 1;;
+
+        ## Archives
+        application/zip|application/gzip|application/zstd|application/x-tar)
+            atool --list -- "${FILE_PATH}" && exit 1
+            bsdtar --list --file "${FILE_PATH}" && exit 1
+            exit 1;;
+
+        application/x-7z-compressed)
+            # Avoid password prompt by providing empty password
+            7z l -p -- "${FILE_PATH}"
+            exit 1;;
+
+        application/vnd.rar)
+            # Avoid password prompt by providing empty password
+            unrar lt -p- -- "${FILE_PATH}"
+            exit 1;;
+    esac
+}
+
+handle_fallback() {
+    echo '----- File Type Classification -----' && file --dereference --brief -- "${FILE_PATH}"
+    exit 1
+}
+
+handle_mime
+handle_fallback

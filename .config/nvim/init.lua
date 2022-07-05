@@ -143,7 +143,13 @@ index e47e079..4e6afde 100644
 
     use {
         'romgrk/barbar.nvim',
-        requires = 'kyazdani42/nvim-web-devicons'
+        requires = 'kyazdani42/nvim-web-devicons',
+        config = function()
+            require('bufferline').setup {
+                closable = false,
+                letters = 'asdfjklöghnmxcvbziowerutyqpASDFJKLGHNMXCVBZIOWERUTYQP',
+            }
+        end
     }
 
     use {
@@ -200,11 +206,10 @@ index e47e079..4e6afde 100644
                             { key = ">",                            cb = tree_cb("next_sibling") },
                             { key = "P",                            cb = tree_cb("parent_node") },
                             { key = "<BS>",                         cb = tree_cb("close_node") },
-                            { key = "<S-CR>",                       cb = tree_cb("close_node") },
                             { key = "<Tab>",                        cb = tree_cb("preview") },
                             { key = "K",                            cb = tree_cb("first_sibling") },
                             { key = "J",                            cb = tree_cb("last_sibling") },
-                            { key = "I",                            cb = tree_cb("toggle_ignored") },
+                            { key = "I",                            cb = tree_cb("toggle_git_ignored") },
                             { key = "H",                            cb = tree_cb("toggle_dotfiles") },
                             { key = "R",                            cb = tree_cb("refresh") },
                             { key = "a",                            cb = tree_cb("create") },
@@ -292,6 +297,15 @@ index e47e079..4e6afde 100644
         end
     }
 
+    use {
+        'rcarriga/nvim-notify',
+        config = function()
+            local notify = require('notify')
+            notify.setup { }
+            vim.notify = notify
+        end
+    }
+
     -- Navigation
     use 'christoomey/vim-tmux-navigator'
 
@@ -318,7 +332,39 @@ index e47e079..4e6afde 100644
         'nvim-telescope/telescope.nvim',
         cmd = 'Telescope',
         module = { 'telescope', 'telescope.builtin' },
-        requires = { 'nvim-lua/plenary.nvim' }
+        requires = { 'nvim-lua/plenary.nvim' },
+        config = function()
+            require('telescope').setup {
+                defaults = {
+                    preview = {
+                        mime_hook = function(filepath, bufnr, opts)
+                            local is_image = function(filepath)
+                                local image_extensions = { 'png', 'jpg', 'gif' }   -- Supported image formats
+                                local split_path = vim.split(filepath:lower(), '.', {plain=true})
+                                local extension = split_path[#split_path]
+                                return vim.tbl_contains(image_extensions, extension)
+                            end
+                            if is_image(filepath) and vim.fn.executable('catimg') == 1 then
+                                local term = vim.api.nvim_open_term(bufnr, {})
+                                local width = vim.api.nvim_win_get_width(opts.winid)
+                                local height = vim.api.nvim_win_get_height(opts.winid)
+                                local function send_output(_, data, _ )
+                                    for _, d in ipairs(data) do
+                                        vim.api.nvim_chan_send(term, d..'\r\n')
+                                    end
+                                end
+                                vim.fn.jobstart({
+                                    'catimg', '-w', width * 2, ' -H', height * 2, filepath
+                                },
+                                { on_stdout=send_output, stdout_buffered=true })
+                            else
+                                require('telescope.previewers.utils').set_preview_message(bufnr, opts.winid, 'Binary cannot be previewed')
+                            end
+                        end
+                    }
+                }
+            }
+        end
     }
 
     use {
@@ -787,25 +833,26 @@ index e47e079..4e6afde 100644
                     edit = "e",
                     repl = "r",
                 },
-                sidebar = {
-                -- You can change the order of elements in the sidebar
-                    elements = {
-                        -- Provide as ID strings or tables with "id" and "size" keys
-                        {
-                            id = "scopes",
-                            size = 0.25, -- Can be float or integer > 1
+                layouts = {
+                    {
+                        elements = {
+                            -- Elements can be strings or table with id and size keys.
+                            { id = "scopes", size = 0.25 },
+                            "breakpoints",
+                            "stacks",
+                            "watches",
                         },
-                        { id = "breakpoints", size = 0.25 },
-                        { id = "stacks", size = 0.25 },
-                        { id = "watches", size = 00.25 },
+                        size = 40,
+                        position = "left",
                     },
-                    size = 40,
-                    position = "left", -- Can be "left", "right", "top", "bottom"
-                },
-                tray = {
-                    elements = { "repl" },
-                    size = 10,
-                    position = "bottom", -- Can be "left", "right", "top", "bottom"
+                    {
+                        elements = {
+                            "repl",
+                            "console",
+                        },
+                        size = 10,
+                        position = "bottom",
+                    },
                 },
                 floating = {
                     max_height = nil, -- These can be integers or a float between 0 and 1.
@@ -1173,17 +1220,17 @@ index e47e079..4e6afde 100644
                 ['Ä'] = { '}', '', noremap = false },
             }, { mode = 'v' })
 
-                -- terminal
+            -- terminal
             wk.register({
                 ['<esc><esc>'] = { '<c-bslash><c-n>', 'Exit Terminal Mode' },
                 ['<c-h>'] = { '<c-bslash><c-n><cmd>TmuxNavigateLeft<cr>', 'Window Left' },
                 ['<c-j>'] = { '<c-bslash><c-n><cmd>TmuxNavigateDown<cr>', 'Window Down' },
                 ['<c-k>'] = { '<c-bslash><c-n><cmd>TmuxNavigateUp<cr>', 'Window Up' },
                 ['<c-l>'] = { '<c-bslash><c-n><cmd>TmuxNavigateRight<cr>', 'Window Right' },
-                ['<m-k>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferPrevious<cr>" : "")', 'Previous Buffer' },
-                ['<m-j>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferNext<cr>" : "")', 'Next Buffer' },
-                ['<m-q>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferClose!<cr>" : "<c-bslash><c-n>:bd!<cr>")', 'Close Buffer' },
-                ['<m-Q>'] = { '(&buflisted == 1 ? "<c-bslash><c-n><cmd>BufferClose!<cr>" : "<c-bslash><c-n>:bd!<cr>")', 'Close Buffer' },
+                ['<m-k>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferPrevious]] end end, 'Previous Buffer' },
+                ['<m-j>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferNext]] end end, 'Next Buffer' },
+                ['<m-q>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferClose!]] else vim.cmd[[bd!]] end end, 'Close Buffer' },
+                ['<m-Q>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferClose!]] else vim.cmd[[bd!]] end end, 'Close Buffer' },
             }, { mode = 't' })
         end
     }
@@ -1213,7 +1260,19 @@ vim.api.nvim_create_autocmd("BufWritePre", {
     callback = function()
         if vim.bo.filetype == 'cpp' and vim.fn.filereadable('.clang-format') == 1 then
             vim.lsp.buf.formatting_sync(nil, 1000)
+        elseif vim.bo.filetype == 'rust' then
+            vim.lsp.buf.formatting_sync(nil, 1000)
         end
+    end
+})
+
+--- Highlightedjank
+vim.api.nvim_create_autocmd('TextYankPost', {
+    callback = function()
+        vim.highlight.on_yank {
+            higroup=(vim.fn['hlexists']('HighlightedyankRegion') > 0 and 'HighlightedyankRegion' or 'IncSearch'),
+            timeout=200
+        }
     end
 })
 
@@ -1238,7 +1297,6 @@ vim.opt.showmode = false
 vim.opt.termguicolors = true
 vim.opt.inccommand = 'nosplit'
 vim.opt.title = true
-vim.opt.guifont = 'JetbrainsMono Nerd Font:h10'
 vim.opt.background = 'dark'
 vim.opt.undofile = true
 vim.opt.switchbuf:append('useopen')
@@ -1254,16 +1312,6 @@ vim.opt.foldlevel = 99
 vim.opt.laststatus = 3
 vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions
 
--- TODO: Put this back into packer config. This crashes barbar on PackerCompile
-vim.g.bufferline = {
-    closable = false
-}
-
-vim.api.nvim_create_autocmd('TextYankPost', {
-    callback = function()
-        vim.highlight.on_yank {
-            higroup=(vim.fn['hlexists']('HighlightedyankRegion') > 0 and 'HighlightedyankRegion' or 'IncSearch'),
-            timeout=200
-        }
-    end
-})
+-- Gui settings
+vim.opt.guifont = 'JetbrainsMono Nerd Font:h10'
+vim.g.neovide_remember_window_size = false
