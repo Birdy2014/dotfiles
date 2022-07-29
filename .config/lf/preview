@@ -75,7 +75,7 @@ handle_mime() {
         ## Image
         image/*)
             local image_width="$(identify -format '%w %h' "$FILE_PATH")"
-            if [[ "$image_width" < "$MAX_IMAGE_WIDTH" ]]; then
+            if (( "$image_width" < "$MAX_IMAGE_WIDTH" )); then
                 display_image_inplace
             else
                 convert -geometry "$MAX_IMAGE_WIDTH"x -- "${FILE_PATH}" "${IMAGE_CACHE_PATH}" && display_image_cache

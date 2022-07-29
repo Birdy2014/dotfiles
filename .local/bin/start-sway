@@ -1,0 +1,25 @@
+#!/bin/sh
+
+export XDG_CURRENT_DESKTOP=sway
+export XDG_SESSION_DESKTOP=sway
+export XDG_SESSION_TYPE=wayland
+
+# enable wayland in applications
+export MOZ_ENABLE_WAYLAND=1
+
+# theming
+export GTK_THEME=Gruvbox-Material-Dark
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export QT_QPA_PLATFORMTHEME=qt5ct
+
+# workarounds
+export _JAVA_AWT_WM_NONREPARENTING=1
+
+# nvidia-specific workarounds
+if lsmod | grep nvidia > /dev/null; then
+    export WLR_NO_HARDWARE_CURSORS=1 # Fix invisible cursor
+    export WLR_RENDERER=vulkan # Fix flicker
+    export XWAYLAND_NO_GLAMOR=1 # Fix flicker in XWayland by disabling hardware acceleration. Makes gaming impossible
+fi
+
+exec sway --unsupported-gpu

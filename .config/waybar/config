@@ -37,7 +37,7 @@
     },
     "custom/playerctl": {
         "exec": "~/.config/waybar/scripts/playerctl.sh",
-        "on-click": "playerctl play-pause",
+        "on-click": "playerctl-current play-pause",
         "interval": 2
     },
     "custom/calendar": {
@@ -70,11 +70,11 @@
         // "hwmon-path": "/sys/class/hwmon/hwmon2/temp1_input",
         "critical-threshold": 80,
         // "format-critical": "{temperatureC}°C {icon}",
-        "format": "{temperatureC}°C {icon}",
+        "format": "{icon} {temperatureC}°C",
         "format-icons": ["", "", ""]
     },
     "backlight": {
-        "format": "{percent}% {icon}",
+        "format": "{icon} {percent}%",
         "format-icons": ["", ""]
     },
     "battery": {
@@ -85,28 +85,28 @@
             "warning": 30,
             "critical": 15
         },
-        "format": "{capacity}% {icon}",
-        "format-charging": "{capacity}% ",
-        "format-plugged": "{capacity}% ",
-        "format-alt": "{time} {icon}",
+        "format": "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-alt": "{icon} {time}",
         // "format-good": "", // An empty format will hide the module
         // "format-full": "",
-        "format-icons": ["", "", "", "", ""]
+        "format-icons": [" ", " ", " ", " ", " "]
     },
     "network": {
         "interval": 10,
         "format-wifi": "直 {essid} ({signalStrength}%)",
-        "format-ethernet": " {ifname} {bandwidthDownOctets}  {bandwidthUpOctets} 祝",
+        "format-ethernet": " {ifname}  {bandwidthDownOctets} 祝 {bandwidthUpOctets}",
         "format-linked": " {ifname} (No IP)",
         "format-disconnected": " Disconnected",
-        "format-tooltip": "{ifname} {ipaddr} {bandwidthDownOctets}  {bandwidthUpOctets} 祝",
+        "format-tooltip": "{ifname} {ipaddr}  {bandwidthDownOctets} 祝 {bandwidthUpOctets}",
     },
     "pulseaudio": {
-        "format": "{volume}% {icon} {format_source}",
-        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format": "{icon} {volume}% {format_source}",
+        "format-bluetooth": "{icon} {volume}% {format_source}",
         "format-bluetooth-muted": "{icon} {format_source}",
         "format-muted": "{format_source}",
-        "format-source": "{volume}% ",
+        "format-source": " {volume}%",
         "format-source-muted": "",
         "format-icons": {
             "headphone": "",
