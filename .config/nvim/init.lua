@@ -292,7 +292,7 @@ index e47e079..4e6afde 100644
         config = function()
             require('indent_blankline').setup {
                 buftype_exclude = { 'terminal' },
-                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree' }
+                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg' }
             }
         end
     }
@@ -461,7 +461,7 @@ index e47e079..4e6afde 100644
                         enable = true,
                         clear_on_cursor_move = true,
                     },
-                    --highlight_current_scope = { enable = true }, -- Maybe enable when #31 is merged
+                    --highlight_current_scope = { enable = true }, -- Maybe enable when nvim-treesitter-refactor#31 is merged
                 }
             }
 
@@ -876,6 +876,7 @@ index e47e079..4e6afde 100644
 
     use {
         "vuki656/package-info.nvim",
+        commit = '10de4d0d50ec1d4d26118c4aa067a9d09e370c9c',
         requires = "MunifTanjim/nui.nvim",
         config = function()
             require('package-info').setup()
@@ -974,7 +975,6 @@ index e47e079..4e6afde 100644
                     },
                     ["core.norg.concealer"] = {
                         config = {
-                            preset = 'diamond'
                         }
                     },
                     ["core.norg.completion"] = {
@@ -1031,43 +1031,21 @@ index e47e079..4e6afde 100644
     }
 
     use {
-        'rmagatti/auto-session',
-        config = function()
-            vim.o.sessionoptions="blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal"
-
-            function restore_nvim_tree()
-                if vim.fn.bufexists('NvimTree_1') == 1 then
-                    require('nvim-tree').open()
-                end
-            end
-
-            function close_dapui()
-                if not packer_plugins['dapui'] or not packer_plugins['dapui'].loaded then
-                    return
-                end
-                local dapui = require('dapui')
-                dapui.close()
-            end
-
-            require('auto-session').setup {
-                log_level = 'info',
-                auto_session_suppress_dirs = { '~/' },
-                auto_session_enable_last_session = false,
-                auto_save_enabled = true,
-                auto_restore_enabled = false,
-                pre_save_cmds = { close_dapui },
-                post_restore_cmds = { restore_nvim_tree },
-            }
-        end
-    }
-
-    use {
         'Darazaki/indent-o-matic',
         config = function()
             require('indent-o-matic').setup {
             max_lines = 2048,
             standard_widths = { 2, 4, 8 },
         }
+        end
+    }
+
+    use {
+        'windwp/nvim-autopairs',
+        config = function()
+            require('nvim-autopairs').setup {
+                disable_filetype = { 'TelescopePrompt' , 'vim' },
+            }
         end
     }
 
@@ -1128,13 +1106,6 @@ index e47e079..4e6afde 100644
                     j = { '<cmd>sp<cr>', 'Split Down' },
                     k = { '<cmd>sp<cr>', 'Split Up' },
                     l = { '<cmd>vs<cr>', 'Split Right' },
-                },
-                -- sessions
-                ['<leader>S'] = {
-                    name = 'Sessions',
-                    s = { '<cmd>SaveSession<cr>', 'Save Session' },
-                    l = { '<cmd>RestoreSession<cr>', 'Load Session' },
-                    d = { '<cmd>DeleteSession<cr>', 'Delete Session' },
                 },
                 -- Telescope
                 ['<leader>f'] = {
@@ -1311,6 +1282,7 @@ vim.opt.scrolloff = 1
 vim.opt.foldlevel = 99
 vim.opt.laststatus = 3
 vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions
+vim.opt.linebreak = true
 
 -- Gui settings
 vim.opt.guifont = 'JetbrainsMono Nerd Font:h10'

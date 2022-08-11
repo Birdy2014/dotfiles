@@ -20,6 +20,8 @@ if lsmod | grep nvidia > /dev/null; then
     export WLR_NO_HARDWARE_CURSORS=1 # Fix invisible cursor
     export WLR_RENDERER=vulkan # Fix flicker
     export XWAYLAND_NO_GLAMOR=1 # Fix flicker in XWayland by disabling hardware acceleration. Makes gaming impossible
+
+    exec sway --unsupported-gpu
 fi
 
-exec sway --unsupported-gpu
+exec sway
