@@ -1,7 +1,7 @@
 --[[
 
 External Requirements:
-- Neovim 0.7+
+- Neovim 0.8+
 - Terminal with support for unicode and truecolors
 - A patched font from https://www.nerdfonts.com/
 - Language Servers:
@@ -10,6 +10,7 @@ External Requirements:
     - rust_analyzer
     - tsserver
     - texlab
+    - bashls
 - Debug Adapters (start debugging with F5)
     - lldb (with /bin/lldb-vscode binary)
     - debugpy
@@ -50,50 +51,62 @@ require('packer').startup(function()
 
     -- Theme / Statusbars / Visual
     use {
-        'eddyekofo94/gruvbox-flat.nvim',
+        -- TODO: switch back to the original version of the theme once it has been fixed
+        --'eddyekofo94/gruvbox-flat.nvim',
+        'michaelpennington/gruvbox-flat.nvim',
         config = function()
             vim.cmd('colorscheme gruvbox-flat')
         end
     }
 
     use {
-        'norcalli/nvim-colorizer.lua',
-        run = [[bash -c 'patch lua/colorizer.lua <<EOF
-diff --git a/lua/colorizer.lua b/lua/colorizer.lua
-index e47e079..4e6afde 100644
---- a/lua/colorizer.lua
-+++ b/lua/colorizer.lua
-@@ -17,7 +17,7 @@ local COLOR_MAP
- local COLOR_TRIE
- local COLOR_NAME_MINLEN, COLOR_NAME_MAXLEN
- local COLOR_NAME_SETTINGS = {
--	lowercase = false;
-+	lowercase = true;
- 	strip_digits = false;
- }
-
-        EOF']],
+        'xiyaowong/nvim-transparent',
         config = function()
-            require 'colorizer'.setup({
-                '*',
-                css = {
-                    names = true,
-                    css = true,
+            require("transparent").setup({
+                enable = vim.env.TRANSPARENT == '1',
+                extra_groups = { -- table/string: additional groups that should be cleared
+                    -- In particular, when you set it to 'all', that means all available groups
+
+                    -- example of akinsho/nvim-bufferline.lua
+                    "BufferLineTabClose",
+                    "BufferlineBufferSelected",
+                    "BufferLineFill",
+                    "BufferLineBackground",
+                    "BufferLineSeparator",
+                    "BufferLineIndicatorSelected",
                 },
-                sass = {
-                    names = true,
-                    css = true,
-                },
-                scss = {
-                    names = true,
-                    css = true,
-                },
-            }, {
-                names = false,
-                lowercase = true,
-                RRGGBBAA = true,
-                mode = 'foreground',
+                exclude = {}, -- table: groups you don't want to clear
             })
+        end
+    }
+
+    use {
+        'NvChad/nvim-colorizer.lua',
+        config = function()
+            require("colorizer").setup {
+                filetypes = { "*" },
+                user_default_options = {
+                    RGB = true, -- #RGB hex codes
+                    RRGGBB = true, -- #RRGGBB hex codes
+                    names = true, -- "Name" codes like Blue or blue
+                    RRGGBBAA = false, -- #RRGGBBAA hex codes
+                    AARRGGBB = false, -- 0xAARRGGBB hex codes
+                    rgb_fn = false, -- CSS rgb() and rgba() functions
+                    hsl_fn = false, -- CSS hsl() and hsla() functions
+                    css = false, -- Enable all CSS features: rgb_fn, hsl_fn, names, RGB, RRGGBB
+                    css_fn = false, -- Enable all CSS *functions*: rgb_fn, hsl_fn
+                    -- Available modes for `mode`: foreground, background,  virtualtext
+                    mode = "background", -- Set the display mode.
+                    -- Available methods are false / true / "normal" / "lsp" / "both"
+                    -- True is same as normal
+                    tailwind = false, -- Enable tailwind colors
+                    -- parsers can contain values used in |user_default_options|
+                    sass = { enable = false, parsers = { css }, }, -- Enable sass colors
+                    virtualtext = "■",
+                },
+                -- all the sub-options of filetypes apply to buftypes
+                buftypes = {},
+            }
         end
     }
 
@@ -376,10 +389,22 @@ index e47e079..4e6afde 100644
         end
     }
 
+    use {
+        'haya14busa/vim-asterisk',
+        config = function()
+            vim.keymap.set({'n', 'v'}, '*', '<Plug>(asterisk-*)')
+            vim.keymap.set({'n', 'v'}, '#', '<Plug>(asterisk-#)')
+            vim.keymap.set({'n', 'v'}, 'g*', '<Plug>(asterisk-g*)')
+            vim.keymap.set({'n', 'v'}, 'g#', '<Plug>(asterisk-g#)')
+        end
+    }
+
+    use { 'mg979/vim-visual-multi' }
+
     -- Coding
     use {
         'neovim/nvim-lspconfig',
-        requires = 'hrsh7th/cmp-nvim-lsp',
+        requires = { 'hrsh7th/cmp-nvim-lsp' },
         config = function()
             local lspconfig = require('lspconfig')
 
@@ -388,17 +413,17 @@ index e47e079..4e6afde 100644
                 local bufnr = vim.api.nvim_get_current_buf()
 
                 for _, client in ipairs(clients) do
-                    if client.resolved_capabilities.goto_definition then
+                    if client.server_capabilities.goto_definition then
                         vim.api.nvim_buf_set_option(bufnr, 'tagfunc', 'v:lua.vim.lsp.tagfunc')
                     end
 
-                    if client.resolved_capabilities.document_formatting then
+                    if client.server_capabilities.document_formatting then
                         vim.api.nvim_buf_set_option(bufnr, 'formatexpr', 'v:lua.vim.lsp.formatexpr()')
                     end
                 end
             end
 
-            local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver', 'bashls' }
+            local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver', 'bashls', 'texlab' }
 
             local server_config = {
                 rust_analyzer = {
@@ -406,6 +431,14 @@ index e47e079..4e6afde 100644
                         checkOnSave = {
                             command = 'clippy',
                             --extraArgs = { '--offline' }
+                        }
+                    }
+                },
+                texlab = {
+                    texlab = {
+                        build = {
+                            executable = 'pdflatex',
+                            onSave = true
                         }
                     }
                 }
@@ -420,25 +453,35 @@ index e47e079..4e6afde 100644
                 lspconfig[lsp].setup(conf)
             end
 
-            lspconfig.texlab.setup {
-                settings = {
-                    latex = {
-                        build = {
-                            executable = 'pdflatex',
-                            onSave = true
-                        }
-                    }
-                },
-                capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities()),
-                on_attach = on_lsp_attach
-            }
-
             local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
 
             for type, icon in pairs(signs) do
                 local hl = 'DiagnosticSign' .. type
                 vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
             end
+        end
+    }
+
+    -- TODO: lsp-inlayhints.nvim can be removed once neovim#18086 is merged
+    use {
+        'lvimuser/lsp-inlayhints.nvim',
+        config = function()
+            local inlayhints = require("lsp-inlayhints")
+            inlayhints.setup()
+            vim.api.nvim_create_augroup("LspAttach_inlayhints", {})
+
+            vim.api.nvim_create_autocmd("LspAttach", {
+                group = "LspAttach_inlayhints",
+                callback = function(args)
+                    if not (args.data and args.data.client_id) then
+                        return
+                    end
+
+                    local bufnr = args.buf
+                    local client = vim.lsp.get_client_by_id(args.data.client_id)
+                    inlayhints.on_attach(client, bufnr)
+                end,
+            })
         end
     }
 
@@ -451,7 +494,6 @@ index e47e079..4e6afde 100644
                 ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'comment', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
-                    additional_vim_regex_highlighting = true, -- Needed for spellchecker to distinguish between code and comment
                 },
                 indent = {
                     enable = false
@@ -595,6 +637,28 @@ index e47e079..4e6afde 100644
                 end
             end
 
+            local lspkind_comparator = function(conf)
+                local lsp_types = require('cmp.types').lsp
+                return function(entry1, entry2)
+                    if entry1.source.name ~= 'nvim_lsp' then
+                        if entry2.source.name == 'nvim_lsp' then
+                            return false
+                        else
+                            return nil
+                        end
+                    end
+                    local kind1 = lsp_types.CompletionItemKind[entry1:get_kind()]
+                    local kind2 = lsp_types.CompletionItemKind[entry2:get_kind()]
+
+                    local priority1 = conf.kind_priority[kind1] or 0
+                    local priority2 = conf.kind_priority[kind2] or 0
+                    if priority1 == priority2 then
+                        return nil
+                    end
+                    return priority2 < priority1
+                end
+            end
+
             cmp.setup({
                 completion = {
                     completeopt = 'menuone,noselect',
@@ -652,6 +716,35 @@ index e47e079..4e6afde 100644
                 },
                 sorting = {
                     comparators = {
+                        lspkind_comparator({
+                            kind_priority = {
+                                Field = 11,
+                                Property = 11,
+                                Constant = 10,
+                                Enum = 10,
+                                EnumMember = 10,
+                                Event = 10,
+                                Function = 10,
+                                Method = 10,
+                                Operator = 10,
+                                Reference = 10,
+                                Struct = 10,
+                                Variable = 10,
+                                File = 8,
+                                Folder = 8,
+                                Class = 5,
+                                Color = 5,
+                                Module = 5,
+                                Keyword = 2,
+                                Constructor = 1,
+                                Interface = 1,
+                                Snippet = 0,
+                                Text = 1,
+                                TypeParameter = 1,
+                                Unit = 1,
+                                Value = 1,
+                            },
+                        }),
                         cmp.config.compare.recently_used,
                         cmp.config.compare.score,
                         cmp.config.compare.length,
@@ -743,7 +836,6 @@ index e47e079..4e6afde 100644
 
     use {
         'folke/trouble.nvim',
-        cmd = 'TroubleToggle',
         config = function()
             require('trouble').setup {
                 position = 'right'
@@ -936,7 +1028,7 @@ index e47e079..4e6afde 100644
 
     use {
         'nvim-neorg/neorg',
-        requires =  'nvim-lua/plenary.nvim',
+        requires = 'nvim-lua/plenary.nvim',
         after = 'nvim-treesitter',
         ft = 'norg',
         cmd = 'NeorgStart',
@@ -1198,10 +1290,10 @@ index e47e079..4e6afde 100644
                 ['<c-j>'] = { '<c-bslash><c-n><cmd>TmuxNavigateDown<cr>', 'Window Down' },
                 ['<c-k>'] = { '<c-bslash><c-n><cmd>TmuxNavigateUp<cr>', 'Window Up' },
                 ['<c-l>'] = { '<c-bslash><c-n><cmd>TmuxNavigateRight<cr>', 'Window Right' },
-                ['<m-k>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferPrevious]] end end, 'Previous Buffer' },
-                ['<m-j>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferNext]] end end, 'Next Buffer' },
-                ['<m-q>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferClose!]] else vim.cmd[[bd!]] end end, 'Close Buffer' },
-                ['<m-Q>'] = { function() if vim.bo.buflisted then vim.cmd[[BufferClose!]] else vim.cmd[[bd!]] end end, 'Close Buffer' },
+                ['<m-k>'] = { function() if vim.bo.buflisted then vim.cmd'BufferPrevious' end end, 'Previous Buffer' },
+                ['<m-j>'] = { function() if vim.bo.buflisted then vim.cmd'BufferNext' end end, 'Next Buffer' },
+                ['<m-q>'] = { function() if vim.bo.buflisted then vim.cmd'BufferClose!' else vim.cmd'bd!' end end, 'Close Buffer' },
+                ['<m-Q>'] = { function() if vim.bo.buflisted then vim.cmd'BufferClose!' else vim.cmd'bd!' end end, 'Close Buffer' },
             }, { mode = 't' })
         end
     }
@@ -1230,9 +1322,9 @@ vim.api.nvim_create_autocmd("BufWritePre", {
     group = 'fmt',
     callback = function()
         if vim.bo.filetype == 'cpp' and vim.fn.filereadable('.clang-format') == 1 then
-            vim.lsp.buf.formatting_sync(nil, 1000)
+            vim.lsp.buf.format({ async = false })
         elseif vim.bo.filetype == 'rust' then
-            vim.lsp.buf.formatting_sync(nil, 1000)
+            vim.lsp.buf.format({ async = false })
         end
     end
 })
@@ -1246,9 +1338,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
         }
     end
 })
-
---- auto-close NvimTree
---vim.cmd [[autocmd BufEnter * ++nested if winnr('$') == 1 && bufname() == 'NvimTree_' . tabpagenr() | quit | endif]]
 
 --- -----------------------
 ---     CONFIGURATION
@@ -1283,6 +1372,8 @@ vim.opt.foldlevel = 99
 vim.opt.laststatus = 3
 vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions
 vim.opt.linebreak = true
+vim.opt.conceallevel = 1
+--vim.opt.cmdheight = 0
 
 -- Gui settings
 vim.opt.guifont = 'JetbrainsMono Nerd Font:h10'

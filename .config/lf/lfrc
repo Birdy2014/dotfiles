@@ -57,9 +57,9 @@ cmd open ${{
     esac
 }}
 
-cmd open_with ${{
+cmd open-with ${{
     command -v "$1" && {
-        "$1" "$f" & disown
+        setsid $1 "$f" > /dev/null 2> /dev/null &
     }
 }}
 

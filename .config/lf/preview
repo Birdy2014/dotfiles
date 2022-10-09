@@ -36,7 +36,11 @@ LF_CACHE="$HOME/.cache/lf_images"
 IMAGE_CACHE_PATH="$LF_CACHE/$(echo "$FILE_PATH" | sha1sum | cut -f1 -d' ').jpg"
 
 if [[ -f "$IMAGE_CACHE_PATH" ]]; then
-    [[ $(stat -c '%W' "$FILE_PATH") < $(stat -c '%W' "$IMAGE_CACHE_PATH") ]] && display_image_cache && exit 1
+    if [[ $(stat -c '%Y' "$FILE_PATH") -lt $(stat -c '%Y' "$IMAGE_CACHE_PATH") ]]; then
+        display_image_cache && exit 1
+    else
+        rm "$IMAGE_CACHE_PATH"
+    fi
 fi
 
 handle_mime() {
@@ -89,7 +93,7 @@ handle_mime() {
 
             # Get frame 10% into video
             local video_width=$(ffprobe -v error -show_entries stream=width -of default=nw=1:nk=1 "${FILE_PATH}")
-            local width=$((video_width>MAX_IMAGE_WIDTH ? max_width : video_width))
+            local width=$((video_width>MAX_IMAGE_WIDTH ? MAX_IMAGE_WIDTH : video_width))
             ffmpegthumbnailer -i "${FILE_PATH}" -o "${IMAGE_CACHE_PATH}" -s ${width} && display_image_cache && exit 1
             exit 1;;
 
@@ -124,10 +128,22 @@ handle_mime() {
     esac
 }
 
+handle_extension() {
+    case "$FILE_PATH" in
+        *.mp3)
+            # Sometimes mp3 files are not recognized for some reason
+            # Get embedded thumbnail
+            ffmpeg -i "${FILE_PATH}" -map 0:v -map -0:V -c copy \
+              "${IMAGE_CACHE_PATH}" && display_image_cache && exit 1
+            exit 1;;
+    esac
+}
+
 handle_fallback() {
     echo '----- File Type Classification -----' && file --dereference --brief -- "${FILE_PATH}"
     exit 1
 }
 
 handle_mime
+handle_extension
 handle_fallback
