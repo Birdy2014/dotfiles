@@ -77,6 +77,7 @@ install_packages() {
 
 setup_dotfiles() {
     git clone --bare https://github.com/Birdy2014/dotfiles.git $HOME/.dotfiles
+    git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME config --local status.showUntrackedFiles no
     git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME checkout
 }
 

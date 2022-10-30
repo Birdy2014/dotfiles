@@ -305,7 +305,9 @@ require('packer').startup(function()
         config = function()
             require('indent_blankline').setup {
                 buftype_exclude = { 'terminal' },
-                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg' }
+                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg' },
+                space_char_blankline = ' ',
+                show_current_context = true
             }
         end
     }
@@ -446,10 +448,13 @@ require('packer').startup(function()
 
             for _, lsp in ipairs(servers) do
                 local conf = {
-                    capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities()),
+                    capabilities = require('cmp_nvim_lsp').default_capabilities(),
                     on_attach = on_lsp_attach,
                     settings = server_config[lsp] or {}
                 }
+                if lsp == 'clangd' then
+                    conf.cmd = { 'clangd', '-header-insertion=never' }
+                end
                 lspconfig[lsp].setup(conf)
             end
 
@@ -459,29 +464,6 @@ require('packer').startup(function()
                 local hl = 'DiagnosticSign' .. type
                 vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
             end
-        end
-    }
-
-    -- TODO: lsp-inlayhints.nvim can be removed once neovim#18086 is merged
-    use {
-        'lvimuser/lsp-inlayhints.nvim',
-        config = function()
-            local inlayhints = require("lsp-inlayhints")
-            inlayhints.setup()
-            vim.api.nvim_create_augroup("LspAttach_inlayhints", {})
-
-            vim.api.nvim_create_autocmd("LspAttach", {
-                group = "LspAttach_inlayhints",
-                callback = function(args)
-                    if not (args.data and args.data.client_id) then
-                        return
-                    end
-
-                    local bufnr = args.buf
-                    local client = vim.lsp.get_client_by_id(args.data.client_id)
-                    inlayhints.on_attach(client, bufnr)
-                end,
-            })
         end
     }
 
@@ -496,14 +478,14 @@ require('packer').startup(function()
                     enable = true,
                 },
                 indent = {
-                    enable = false
+                    enable = true,
+                    disable = { 'cpp' }
                 },
                 refactor = {
                     highlight_definitions = {
                         enable = true,
                         clear_on_cursor_move = true,
-                    },
-                    --highlight_current_scope = { enable = true }, -- Maybe enable when nvim-treesitter-refactor#31 is merged
+                    }
                 }
             }
 
@@ -818,6 +800,7 @@ require('packer').startup(function()
         'TimUntersberger/neogit',
         requires = { 'nvim-lua/plenary.nvim', 'sindrets/diffview.nvim' },
         cmd = 'Neogit',
+        module = 'neogit',
         config = function()
             require('neogit').setup{
                 integrations = {
@@ -1029,37 +1012,18 @@ require('packer').startup(function()
     use {
         'nvim-neorg/neorg',
         requires = 'nvim-lua/plenary.nvim',
+        run = ':Neorg sync-parsers',
         after = 'nvim-treesitter',
         ft = 'norg',
-        cmd = 'NeorgStart',
+        cmd = 'Neorg',
         config = function()
-            local parser_configs = require('nvim-treesitter.parsers').get_parser_configs()
-
-            parser_configs.norg_meta = {
-                install_info = {
-                    url = "https://github.com/nvim-neorg/tree-sitter-norg-meta",
-                    files = { "src/parser.c" },
-                    branch = "main"
-                },
-            }
-
-            parser_configs.norg_table = {
-                install_info = {
-                    url = "https://github.com/nvim-neorg/tree-sitter-norg-table",
-                    files = { "src/parser.c" },
-                    branch = "main"
-                },
-            }
-
-            require('nvim-treesitter.install').update { 'norg', 'norg_meta', 'norg_table' }
-
             require('neorg').setup {
                 load = {
                     ["core.defaults"] = {},
                     ["core.norg.dirman"] = {
                         config = {
                             workspaces = {
-                                workspace = "~/Documents/neorg",
+                                home = "~/Documents/neorg",
                             },
                             autochdir = true,
                             index = 'index.norg',
@@ -1229,7 +1193,7 @@ require('packer').startup(function()
                     T = { '<cmd>TroubleToggle todo<cr>', 'Toggle Todos' },
                     u = { '<cmd>MundoToggle<cr>', 'Toggle Undo Tree' },
                     s = { '<cmd>SymbolsOutline<cr>', 'Toggle Symbols Outline' },
-                    g = { '<cmd>Neogit kind=split<cr>', 'Neogit' },
+                    g = { function() require('neogit').open({ kind = 'split' }) end, 'Neogit' },
                     d = { '<cmd>TroubleToggle document_diagnostics<cr>', 'Document Diagnostics' },
                     D = { '<cmd>TroubleToggle workspace_diagnostics<cr>', 'Workspace Diagnostics' },
                 },
@@ -1253,6 +1217,8 @@ require('packer').startup(function()
                 -- move line
                 ['<m-c-k>'] = { ':m -2<cr>==', 'Move line up' },
                 ['<m-c-j>'] = { ':m +1<cr>==', 'Move line down' },
+                -- start neorg
+                ['<leader>n'] = { ':Neorg workspace home<cr>', 'Start Neorg' },
                 -- other
                 ['Y'] = { 'y$', 'Yank to end', noremap = false },
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -1302,12 +1268,39 @@ end)
 --- -----------------------
 ---        AUTOCMDS
 --- -----------------------
+
+function notify_until_success(message, log_level, options)
+    local max_tries = 10
+    local notification_timer = vim.loop.new_timer()
+    local counter = 0
+
+    notification_timer:start(0, 500, function()
+        counter = counter + 1
+        local ran, _ = pcall(vim.notify, message, log_level, options)
+        if (ran or counter >= max_tries) then
+            notification_timer:close()
+        end
+    end)
+end
+
 -- automatically call PackerCompile if init.lua was edited
 local config_file = vim.fn.stdpath('config')..'/init.lua'
 local compile_file = vim.fn.stdpath('config')..'/plugin/packer_compiled.lua'
 if (vim.fn.filereadable(config_file) and vim.fn.filereadable(compile_file) and vim.fn.getftime(config_file) > vim.fn.getftime(compile_file))
 then
-    require('packer').compile()
+    if (vim.fn.hostname() == 'Rotkehlchen')
+    then
+        require('packer').install()
+        require('packer').compile()
+
+        notify_until_success('Config reloaded', vim.log.levels.INFO, {
+            title = 'Configuration File'
+        })
+    else
+        notify_until_success('Run :PackerSync and restart neovim to apply changes to the config file.', vim.log.levels.WARN, {
+            title = 'Configuration File', timeout = false
+        })
+    end
 end
 
 --- Remove trailing spaces
@@ -1342,39 +1335,56 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 --- -----------------------
 ---     CONFIGURATION
 --- -----------------------
+-- basics
+vim.opt.compatible = false
 vim.opt.hidden = true
+
+-- visual
+vim.opt.background = 'dark'
+vim.opt.breakindent = true
+vim.opt.breakindentopt = 'sbr'
+vim.opt.cmdheight = 0
+vim.opt.conceallevel = 1
+vim.opt.laststatus = 3
+vim.opt.linebreak = true
+vim.opt.list = true
+vim.opt.listchars = 'tab:>-,trail:-,nbsp:+'
 vim.opt.number = true
 vim.opt.relativenumber = true
-vim.opt.mouse = 'a'
+vim.opt.showbreak = '↪ '
+vim.opt.showmode = false
+vim.opt.termguicolors = true
+vim.opt.title = true
+
+-- split
+vim.opt.eadirection = 'hor'
+vim.opt.equalalways = true
+vim.opt.splitbelow = true
+vim.opt.splitright = true
+
+-- spelling
+vim.opt.spelllang = { 'en', 'de' }
+
+-- folding
+vim.opt.foldlevel = 99
+
+-- code style
 vim.opt.expandtab = true
 vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
-vim.opt.splitright = true
-vim.opt.splitbelow = true
-vim.opt.timeoutlen = 500
-vim.opt.spelllang = { 'en', 'de' }
-vim.opt.showmode = false
-vim.opt.termguicolors = true
-vim.opt.inccommand = 'nosplit'
-vim.opt.title = true
-vim.opt.background = 'dark'
-vim.opt.undofile = true
-vim.opt.switchbuf:append('useopen')
-vim.opt.list = true
-vim.opt.listchars = 'tab:>-,trail:-,nbsp:+'
-vim.opt.eadirection = 'hor'
-vim.opt.equalalways = true
-vim.opt.breakindent = true
-vim.opt.breakindentopt = 'sbr'
-vim.opt.showbreak = '↪ '
-vim.opt.scrolloff = 1
-vim.opt.foldlevel = 99
-vim.opt.laststatus = 3
-vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions
-vim.opt.linebreak = true
-vim.opt.conceallevel = 1
---vim.opt.cmdheight = 0
+
+-- mouse
+vim.opt.mouse = 'a'
+vim.opt.mousemodel = 'extend'
 
 -- Gui settings
 vim.opt.guifont = 'JetbrainsMono Nerd Font:h10'
 vim.g.neovide_remember_window_size = false
+
+-- other
+vim.opt.inccommand = 'nosplit'
+vim.opt.scrolloff = 1
+vim.opt.switchbuf:append('useopen')
+vim.opt.timeoutlen = 500
+vim.opt.undofile = true
+vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions

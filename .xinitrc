@@ -9,7 +9,7 @@ fi
 
 [ -f ~/.Xresources ] && xrdb ~/.Xresources
 
-session=${1:-dwm}
+session=${1:-i3}
 
 case $session in
     gnome)
@@ -28,5 +28,15 @@ case $session in
         [ -f ~/.fehbg ] && ~/.fehbg
         [ -f ~/.xprofile ] && source ~/.xprofile
         exec dwm
+        ;;
+    i3)
+        export XDG_CURRENT_DESKTOP=i3
+        export XDG_SESSION_DESKTOP=i3
+        export XDG_SESSION_TYPE=x11
+
+        export GTK_THEME=Gruvbox-Material-Dark
+        export QT_QPA_PLATFORMTHEME=qt5ct
+        [ -f ~/.xprofile ] && source ~/.xprofile
+        exec i3
         ;;
 esac

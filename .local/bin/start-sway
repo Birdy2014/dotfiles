@@ -18,10 +18,21 @@ export _JAVA_AWT_WM_NONREPARENTING=1
 # nvidia-specific workarounds
 if lsmod | grep nvidia > /dev/null; then
     export WLR_NO_HARDWARE_CURSORS=1 # Fix invisible cursor
-    export WLR_RENDERER=vulkan # Fix flicker
-    export XWAYLAND_NO_GLAMOR=1 # Fix flicker in XWayland by disabling hardware acceleration. Makes gaming impossible
+    export WLR_RENDERER=vulkan # Fix most flicker
+    export GBM_BACKEND=nvidia-drm
 
-    exec sway --unsupported-gpu
+    #export XWAYLAND_NO_GLAMOR=1 # Fix flicker in XWayland by disabling hardware acceleration. Makes gaming impossible. Not needed on nvidia-open
+    export __GLX_VENDOR_LIBRARY_NAME=nvidia # Needed for nvidia OpenGL driver to load
+
+    # NOTE: created file /etc/modprobe.d/nvidia.conf as recommended on https://wiki.hyprland.org/Nvidia/ to fix random flicker
+
+    # VA-API support; needs libva-nvidia-driver
+    export LIBVA_DRIVER_NAME=nvidia
+    export MOZ_DISABLE_RDD_SANDBOX=1
+    export EGL_PLATFORM=wayland
+
+    # "-D noscanout" fixes lines in fullscreen games
+    exec sway --unsupported-gpu -D noscanout
 fi
 
 exec sway

@@ -111,9 +111,7 @@ for_window [workspace="^$ws1$"] floating enable
 
 # Force borders for all windows
 for_window [app_id=".*"] border normal
-
-# Disable shortcuts_inhibitor for chrome application mode
-for_window [app_id="^chrome-.*-.*$"] shortcuts_inhibitor disable
+for_window [class=".*"] border normal
 
 assign [class="Steam"] $ws5
 assign [class="discord"] $ws7
@@ -126,6 +124,7 @@ for_window [class="steam_app"] inhibit_idle open
 for_window [class="steam_app" title="Origin"] floating enable
 for_window [class="Birdy3d"] floating enable
 for_window [app_id="thunderbird" title=".*Erinnerung(en)?$"] floating enable
+for_window [app_id="firefox" title="Picture-in-Picture"] floating enable; sticky enable
 
 # --------
 # Keybinds
@@ -223,6 +222,10 @@ bindsym Control+Mod4+Mod1+r exec systemctl reboot
 for_window [app_id="scratchpad"] move scratchpad
 exec kitty --class scratchpad
 bindsym $mod+t scratchpad show
+
+# Disable shortcuts inhibitor
+seat seat0 shortcuts_inhibitor disable
+bindsym --inhibited $mod+Menu seat seat0 shortcuts_inhibitor toggle
 
 # ---------------
 # External config
