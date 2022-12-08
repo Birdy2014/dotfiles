@@ -116,7 +116,6 @@ for_window [class=".*"] border normal
 assign [class="Steam"] $ws5
 assign [class="discord"] $ws7
 assign [app_id="thunderbird"] $ws6
-assign [app_id="org.keepassxc.KeePassXC"] $ws1
 
 for_window [class="zoom"] floating enable; inhibit_idle open
 for_window [class="Steam"] inhibit_idle none
@@ -219,9 +218,9 @@ bindsym Control+Mod4+Mod1+s exec systemctl poweroff
 bindsym Control+Mod4+Mod1+r exec systemctl reboot
 
 # Scratchpad
-for_window [app_id="scratchpad"] move scratchpad
-exec kitty --class scratchpad
-bindsym $mod+t scratchpad show
+for_window [app_id="org.keepassxc.KeePassXC"] move scratchpad
+for_window [app_id="org.keepassxc.KeePassXC" title=".*Unlock Database.*"] move workspace current; move position center
+bindsym $mod+o scratchpad show
 
 # Disable shortcuts inhibitor
 seat seat0 shortcuts_inhibitor disable
@@ -256,3 +255,5 @@ exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSO
 
 exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
 exec wlsunset
+
+exec keepassxc

@@ -14,7 +14,6 @@ External Requirements:
 - Debug Adapters (start debugging with F5)
     - lldb (with /bin/lldb-vscode binary)
     - debugpy
-- python and the 'pynvim' python-package (for vim-mundo)
 
 Run :PackerSync after changing the config file and to update plugins.
 
@@ -24,6 +23,8 @@ Run :PackerSync after changing the config file and to update plugins.
 ---        PLUGINS
 --- -----------------------
 local install_path = vim.fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
+
+local ran_nvim_notify_setup = false
 
 if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
     vim.fn.system({'git', 'clone', 'https://github.com/wbthomason/packer.nvim', install_path})
@@ -51,44 +52,32 @@ require('packer').startup(function()
 
     -- Theme / Statusbars / Visual
     use {
-        -- TODO: switch back to the original version of the theme once it has been fixed
-        --'eddyekofo94/gruvbox-flat.nvim',
-        'michaelpennington/gruvbox-flat.nvim',
+        'eddyekofo94/gruvbox-flat.nvim',
         config = function()
             vim.cmd('colorscheme gruvbox-flat')
-        end
-    }
 
-    use {
-        'xiyaowong/nvim-transparent',
-        config = function()
-            require("transparent").setup({
-                enable = vim.env.TRANSPARENT == '1',
-                extra_groups = { -- table/string: additional groups that should be cleared
-                    -- In particular, when you set it to 'all', that means all available groups
-
-                    -- example of akinsho/nvim-bufferline.lua
-                    "BufferLineTabClose",
-                    "BufferlineBufferSelected",
-                    "BufferLineFill",
-                    "BufferLineBackground",
-                    "BufferLineSeparator",
-                    "BufferLineIndicatorSelected",
-                },
-                exclude = {}, -- table: groups you don't want to clear
-            })
+            vim.defer_fn(function()
+                for i = 0, 15, 1 do
+                    vim.g['terminal_color_' .. i] = nil
+                end
+            end, 0)
         end
     }
 
     use {
         'NvChad/nvim-colorizer.lua',
         config = function()
-            require("colorizer").setup {
-                filetypes = { "*" },
+            require('colorizer').setup {
+                filetypes = {
+                    '*',
+                    css = { css = true },
+                    sass = { css = true },
+                    scss = { css = true },
+                },
                 user_default_options = {
                     RGB = true, -- #RGB hex codes
                     RRGGBB = true, -- #RRGGBB hex codes
-                    names = true, -- "Name" codes like Blue or blue
+                    names = false, -- 'Name' codes like Blue or blue
                     RRGGBBAA = false, -- #RRGGBBAA hex codes
                     AARRGGBB = false, -- 0xAARRGGBB hex codes
                     rgb_fn = false, -- CSS rgb() and rgba() functions
@@ -96,13 +85,13 @@ require('packer').startup(function()
                     css = false, -- Enable all CSS features: rgb_fn, hsl_fn, names, RGB, RRGGBB
                     css_fn = false, -- Enable all CSS *functions*: rgb_fn, hsl_fn
                     -- Available modes for `mode`: foreground, background,  virtualtext
-                    mode = "background", -- Set the display mode.
-                    -- Available methods are false / true / "normal" / "lsp" / "both"
+                    mode = 'background', -- Set the display mode.
+                    -- Available methods are false / true / 'normal' / 'lsp' / 'both'
                     -- True is same as normal
                     tailwind = false, -- Enable tailwind colors
                     -- parsers can contain values used in |user_default_options|
                     sass = { enable = false, parsers = { css }, }, -- Enable sass colors
-                    virtualtext = "■",
+                    virtualtext = '■',
                 },
                 -- all the sub-options of filetypes apply to buftypes
                 buftypes = {},
@@ -112,10 +101,7 @@ require('packer').startup(function()
 
     use {
         'nvim-lualine/lualine.nvim',
-        requires = {
-            'kyazdani42/nvim-web-devicons',
-            'arkav/lualine-lsp-progress'
-        },
+        requires = 'kyazdani42/nvim-web-devicons',
         config = function()
             local function package_info_status()
                 local status = require('package-info').get_status()
@@ -123,14 +109,6 @@ require('packer').startup(function()
                     return ''
                 end
                 return status
-            end
-
-            local function lsp_client_names()
-                local client_names = {}
-                for _, client in ipairs(vim.lsp.get_active_clients()) do
-                    table.insert(client_names, client.name)
-                end
-                return table.concat(client_names, ",")
             end
 
             local lualine = require('lualine')
@@ -144,12 +122,22 @@ require('packer').startup(function()
                 sections = {
                     lualine_a = { {'mode', upper = true} },
                     lualine_b = { {'branch', icon = ''}, { 'diff' } },
-                    lualine_c = { { 'filename', file_status = true }, { 'diagnostics', sources = { 'nvim_diagnostic' } }, { lsp_client_names }, { 'lsp_progress' }, { package_info_status } },
-                    lualine_x = { 'encoding', 'fileformat', 'filetype' },
+                    lualine_c = {
+                        { 'filename', path = 1, file_status = true },
+                        { 'diagnostics', sources = { 'nvim_diagnostic' } },
+                        { 'aerial', sep = ' ❯ ' },
+                        { package_info_status },
+                        { function() return vim.fn['vm#themes#statusline']() end }
+                    },
+                    lualine_x = {
+                        'encoding',
+                        'fileformat',
+                        'filetype'
+                    },
                     lualine_y = { 'progress' },
                     lualine_z = { 'location'  },
                 },
-                extensions = { 'nvim-tree', 'toggleterm', 'symbols-outline' }
+                extensions = { 'nvim-tree', 'toggleterm', 'aerial', 'man', 'quickfix' }
             }
         end
     }
@@ -175,6 +163,7 @@ require('packer').startup(function()
                     vim.wo.cursorline = true
                 end
             })
+
             local tree_cb = require'nvim-tree.config'.nvim_tree_callback
             require('nvim-tree').setup {
                 hijack_cursor = true,
@@ -182,10 +171,10 @@ require('packer').startup(function()
                 diagnostics = {
                     enable = true,
                     icons = {
-                        hint = "",
-                        info = "",
-                        warning = "",
-                        error = "",
+                        hint = '',
+                        info = '',
+                        warning = '',
+                        error = '',
                     }
                 },
                 update_focused_file = {
@@ -213,33 +202,33 @@ require('packer').startup(function()
                     mappings = {
                         custom_only = true,
                         list = {
-                            { key = {"<CR>", "o", "<2-LeftMouse>"}, cb = tree_cb("edit") },
-                            { key = {"c", "<2-RightMouse>"},        cb = tree_cb("cd") },
-                            { key = "<",                            cb = tree_cb("prev_sibling") },
-                            { key = ">",                            cb = tree_cb("next_sibling") },
-                            { key = "P",                            cb = tree_cb("parent_node") },
-                            { key = "<BS>",                         cb = tree_cb("close_node") },
-                            { key = "<Tab>",                        cb = tree_cb("preview") },
-                            { key = "K",                            cb = tree_cb("first_sibling") },
-                            { key = "J",                            cb = tree_cb("last_sibling") },
-                            { key = "I",                            cb = tree_cb("toggle_git_ignored") },
-                            { key = "H",                            cb = tree_cb("toggle_dotfiles") },
-                            { key = "R",                            cb = tree_cb("refresh") },
-                            { key = "a",                            cb = tree_cb("create") },
-                            { key = "D",                            cb = tree_cb("remove") },
-                            { key = "r",                            cb = tree_cb("rename") },
-                            { key = "<C-r>",                        cb = tree_cb("full_rename") },
-                            { key = "d",                            cb = tree_cb("cut") },
-                            { key = "y",                            cb = tree_cb("copy") },
-                            { key = "p",                            cb = tree_cb("paste") },
-                            { key = "Y",                            cb = tree_cb("copy_path") },
-                            { key = "gy",                           cb = tree_cb("copy_name") },
-                            { key = "[c",                           cb = tree_cb("prev_git_item") },
-                            { key = "]c",                           cb = tree_cb("next_git_item") },
-                            { key = "u",                            cb = tree_cb("dir_up") },
-                            { key = "s",                            cb = tree_cb("system_open") },
-                            { key = "q",                            cb = tree_cb("close") },
-                            { key = "g?",                           cb = tree_cb("toggle_help") },
+                            { key = {'<CR>', 'o', '<2-LeftMouse>'}, cb = tree_cb('edit') },
+                            { key = {'c', '<2-RightMouse>'},        cb = tree_cb('cd') },
+                            { key = '<',                            cb = tree_cb('prev_sibling') },
+                            { key = '>',                            cb = tree_cb('next_sibling') },
+                            { key = 'P',                            cb = tree_cb('parent_node') },
+                            { key = '<BS>',                         cb = tree_cb('close_node') },
+                            { key = '<Tab>',                        cb = tree_cb('preview') },
+                            { key = 'K',                            cb = tree_cb('first_sibling') },
+                            { key = 'J',                            cb = tree_cb('last_sibling') },
+                            { key = 'I',                            cb = tree_cb('toggle_git_ignored') },
+                            { key = 'H',                            cb = tree_cb('toggle_dotfiles') },
+                            { key = 'R',                            cb = tree_cb('refresh') },
+                            { key = 'a',                            cb = tree_cb('create') },
+                            { key = 'D',                            cb = tree_cb('remove') },
+                            { key = 'r',                            cb = tree_cb('rename') },
+                            { key = '<C-r>',                        cb = tree_cb('full_rename') },
+                            { key = 'd',                            cb = tree_cb('cut') },
+                            { key = 'y',                            cb = tree_cb('copy') },
+                            { key = 'p',                            cb = tree_cb('paste') },
+                            { key = 'Y',                            cb = tree_cb('copy_path') },
+                            { key = 'gy',                           cb = tree_cb('copy_name') },
+                            { key = '[c',                           cb = tree_cb('prev_git_item') },
+                            { key = ']c',                           cb = tree_cb('next_git_item') },
+                            { key = 'u',                            cb = tree_cb('dir_up') },
+                            { key = 's',                            cb = tree_cb('system_open') },
+                            { key = 'q',                            cb = tree_cb('close') },
+                            { key = 'g?',                           cb = tree_cb('toggle_help') },
                         }
                     }
                 },
@@ -293,10 +282,11 @@ require('packer').startup(function()
         end
     }
 
+    -- TODO: Replace with the 'splitkeep' option in neovim 0.9
     use {
         'luukvbaal/stabilize.nvim',
         config = function()
-            require("stabilize").setup()
+            require('stabilize').setup()
         end
     }
 
@@ -305,7 +295,7 @@ require('packer').startup(function()
         config = function()
             require('indent_blankline').setup {
                 buftype_exclude = { 'terminal' },
-                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg' },
+                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg', 'aerial', 'noice' },
                 space_char_blankline = ' ',
                 show_current_context = true
             }
@@ -316,9 +306,135 @@ require('packer').startup(function()
         'rcarriga/nvim-notify',
         config = function()
             local notify = require('notify')
-            notify.setup { }
-            vim.notify = notify
+            notify.setup {
+                stages = 'fade',
+            }
+            ran_nvim_notify_setup = true
         end
+    }
+
+    -- FIXME: not working in neovide with multigrid: https://github.com/folke/noice.nvim/issues/17 https://github.com/neovim/neovim/pull/21080
+    use {
+        'folke/noice.nvim',
+        requires = 'MunifTanjim/nui.nvim',
+        config = function()
+            require('noice').setup {
+                cmdline = {
+                    enabled = true,
+                    view = 'cmdline',
+                    opts = {}, -- global options for the cmdline. See section on views
+                    ---@type table<string, CmdlineFormat>
+                    format = {
+                        cmdline = { pattern = '^:', icon = '', lang = 'vim' },
+                        search_down = { kind = 'search', pattern = '^/', icon = ' ', lang = 'regex' },
+                        search_up = { kind = 'search', pattern = '^%?', icon = ' ', lang = 'regex' },
+                        filter = { pattern = '^:%s*!', icon = '$', lang = 'bash' },
+                        lua = { pattern = '^:%s*lua%s+', icon = '', lang = 'lua' },
+                        help = { pattern = '^:%s*he?l?p?%s+', icon = '' },
+                        input = {}, -- Used by input()
+                    },
+                },
+                messages = {
+                    enabled = true,
+                    view = 'mini',
+                    view_error = 'mini',
+                    view_warn = 'mini',
+                    view_history = 'messages',
+                    view_search = 'virtualtext',
+                },
+                notify = {
+                    enabled = true,
+                    view = 'mini',
+                },
+                lsp = {
+                    -- override markdown rendering so that **cmp** and other plugins use **Treesitter**
+                    override = {
+                        ['vim.lsp.util.convert_input_to_markdown_lines'] = true,
+                        ['vim.lsp.util.stylize_markdown'] = true,
+                        ['cmp.entry.get_documentation'] = true,
+                    },
+                },
+                -- you can enable a preset for easier configuration
+                presets = {
+                    bottom_search = true, -- use a classic bottom cmdline for search
+                    command_palette = true, -- position the cmdline and popupmenu together
+                    long_message_to_split = true, -- long messages will be sent to a split
+                    inc_rename = false, -- enables an input dialog for inc-rename.nvim
+                    lsp_doc_border = true, -- add a border to hover docs and signature help
+                },
+                views = {
+                    mini = {
+                        timeout = 5000,
+                    }
+                },
+            }
+        end
+    }
+
+    use {
+        'lewis6991/satellite.nvim',
+        config = function()
+            require('satellite').setup()
+        end
+    }
+
+    -- Workaround for https://github.com/neovim/neovim/issues/12517
+    use {
+        'stevearc/stickybuf.nvim',
+        config = function()
+            require('stickybuf').setup{
+                -- 'bufnr' will pin the exact buffer (PinBuffer)
+                -- 'buftype' will pin the buffer type (PinBuftype)
+                -- 'filetype' will pin the filetype (PinFiletype)
+                buftype = {
+                    ['']     = false,
+                    acwrite  = false,
+                    help     = 'buftype',
+                    nofile   = false,
+                    nowrite  = false,
+                    quickfix = 'buftype',
+                    terminal = false,
+                    prompt   = 'bufnr',
+                },
+                wintype = {
+                    autocmd  = false,
+                    popup    = 'bufnr',
+                    preview  = false,
+                    command  = false,
+                    ['']     = false,
+                    unknown  = false,
+                    floating = false,
+                },
+                filetype = {
+                    aerial = 'filetype',
+                    NvimTree = 'filetype',
+                },
+                bufname = {
+                    ['Neogit.*Popup'] = 'bufnr',
+                },
+                -- Some autocmds for plugins that need a bit more logic
+                -- Set to `false` to disable the autocmd
+                autocmds = {
+                    -- Only pin defx if it was opened as a split (has fixed height/width)
+                    defx = [[au FileType defx if &winfixwidth || &winfixheight | silent! PinFiletype | endif]],
+                    -- Only pin fern if it was opened as a split (has fixed height/width)
+                    fern = [[au FileType fern if &winfixwidth || &winfixheight | silent! PinFiletype | endif]],
+                    -- Only pin neogit if it was opened as a split (there is more than one window)
+                    neogit = [[au FileType NeogitStatus,NeogitLog,NeogitGitCommandHistory if winnr('$') > 1 | silent! PinFiletype | endif]],
+                }
+            }
+        end
+    }
+
+    use {
+        'smjonas/live-command.nvim',
+        config = function()
+            require('live-command').setup {
+                commands = {
+                    Normal = { cmd = 'normal' },
+                },
+            }
+        end,
     }
 
     -- Navigation
@@ -351,6 +467,9 @@ require('packer').startup(function()
         config = function()
             require('telescope').setup {
                 defaults = {
+                    file_ignore_patterns = {
+                        'node_modules'
+                    },
                     preview = {
                         mime_hook = function(filepath, bufnr, opts)
                             local is_image = function(filepath)
@@ -401,12 +520,18 @@ require('packer').startup(function()
         end
     }
 
-    use { 'mg979/vim-visual-multi' }
+    use {
+        'mg979/vim-visual-multi',
+        setup = function()
+            vim.g.VM_set_statusline = 0
+            vim.g.VM_silent_exit = 1
+        end
+    }
 
     -- Coding
     use {
         'neovim/nvim-lspconfig',
-        requires = { 'hrsh7th/cmp-nvim-lsp' },
+        requires = 'hrsh7th/cmp-nvim-lsp',
         config = function()
             local lspconfig = require('lspconfig')
 
@@ -421,6 +546,23 @@ require('packer').startup(function()
 
                     if client.server_capabilities.document_formatting then
                         vim.api.nvim_buf_set_option(bufnr, 'formatexpr', 'v:lua.vim.lsp.formatexpr()')
+                    end
+
+                    if client.server_capabilities.documentHighlightProvider then
+                        vim.api.nvim_create_augroup('lsp_document_highlight', { clear = true })
+                        vim.api.nvim_clear_autocmds { buffer = bufnr, group = 'lsp_document_highlight' }
+                        vim.api.nvim_create_autocmd('CursorHold', {
+                            callback = vim.lsp.buf.document_highlight,
+                            buffer = bufnr,
+                            group = 'lsp_document_highlight',
+                            desc = 'Document Highlight',
+                        })
+                        vim.api.nvim_create_autocmd('CursorMoved', {
+                            callback = vim.lsp.buf.clear_references,
+                            buffer = bufnr,
+                            group = 'lsp_document_highlight',
+                            desc = 'Clear All the References',
+                        })
                     end
                 end
             end
@@ -453,16 +595,16 @@ require('packer').startup(function()
                     settings = server_config[lsp] or {}
                 }
                 if lsp == 'clangd' then
-                    conf.cmd = { 'clangd', '-header-insertion=never' }
+                    conf.cmd = { 'clangd', '--header-insertion=never', '--query-driver=/usr/bin/g++' }
                 end
                 lspconfig[lsp].setup(conf)
             end
 
-            local signs = { Error = " ", Warn = " ", Hint = " ", Info = " " }
+            local signs = { Error = ' ', Warn = ' ', Hint = ' ', Info = ' ' }
 
             for type, icon in pairs(signs) do
                 local hl = 'DiagnosticSign' .. type
-                vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
+                vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = '' })
             end
         end
     }
@@ -470,10 +612,10 @@ require('packer').startup(function()
     use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate',
-        requires = 'nvim-treesitter/nvim-treesitter-refactor',
         config = function()
             require('nvim-treesitter.configs').setup {
-                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'comment', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
+                -- NOTE: comment parser is slow
+                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
                 },
@@ -481,48 +623,10 @@ require('packer').startup(function()
                     enable = true,
                     disable = { 'cpp' }
                 },
-                refactor = {
-                    highlight_definitions = {
-                        enable = true,
-                        clear_on_cursor_move = true,
-                    }
-                }
             }
 
             vim.wo.foldmethod = 'expr'
             vim.wo.foldexpr = 'nvim_treesitter#foldexpr()'
-        end
-    }
-
-    use {
-        'nvim-treesitter/nvim-treesitter-context',
-        config = function()
-            require('treesitter-context').setup {
-                enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
-                max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
-                patterns = { -- Match patterns for TS nodes. These get wrapped to match at word boundaries.
-                    -- For all filetypes
-                    -- Note that setting an entry here replaces all other patterns for this entry.
-                    -- By setting the 'default' entry below, you can control which nodes you want to
-                    -- appear in the context window.
-                    default = {
-                        'class',
-                        'function',
-                        'method',
-                        -- 'for', -- These won't appear in the context
-                        -- 'while',
-                        -- 'if',
-                        -- 'switch',
-                        -- 'case',
-                    },
-                },
-                exact_patterns = {
-                    -- Example for a specific filetype with Lua patterns
-                    -- Treat patterns.rust as a Lua pattern (i.e "^impl_item$" will
-                    -- exactly match "impl_item" only)
-                    -- rust = true,
-                },
-            }
         end
     }
 
@@ -566,7 +670,7 @@ require('packer').startup(function()
 
             local has_words_before = function()
                 local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-                return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+                return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match('%s') == nil
             end
 
             local luasnip = require('luasnip')
@@ -574,31 +678,31 @@ require('packer').startup(function()
             local cmp = require('cmp')
 
             local lspkind = {
-                Text = "",
-                Method = "",
-                Function = "",
-                Constructor = "",
-                Field = "ﰠ",
-                Variable = "",
-                Class = "ﴯ",
-                Interface = "",
-                Module = "",
-                Property = "ﰠ",
-                Unit = "塞",
-                Value = "",
-                Enum = "",
-                Keyword = "",
-                Snippet = "",
-                Color = "",
-                File = "",
-                Reference = "",
-                Folder = "",
-                EnumMember = "",
-                Constant = "",
-                Struct = "פּ",
-                Event = "",
-                Operator = "",
-                TypeParameter = "",
+                Text = '',
+                Method = '',
+                Function = '',
+                Constructor = '',
+                Field = 'ﰠ',
+                Variable = '',
+                Class = 'ﴯ',
+                Interface = '',
+                Module = '',
+                Property = 'ﰠ',
+                Unit = '塞',
+                Value = '',
+                Enum = '',
+                Keyword = '',
+                Snippet = '',
+                Color = '',
+                File = '',
+                Reference = '',
+                Folder = '',
+                EnumMember = '',
+                Constant = '',
+                Struct = 'פּ',
+                Event = '',
+                Operator = '',
+                TypeParameter = '',
             }
 
             local mapping_tab = function(fallback)
@@ -657,8 +761,8 @@ require('packer').startup(function()
                     ['<C-e>'] = cmp.mapping.close(),
                     ['<C-Space>'] = cmp.mapping.complete(),
                     ['<CR>'] = cmp.mapping.confirm({ select = true }),
-                    ["<Tab>"] = cmp.mapping(mapping_tab, { "i", "s" }),
-                    ["<S-Tab>"] = cmp.mapping(mapping_shift_tab, { "i", "s" }),
+                    ['<Tab>'] = cmp.mapping(mapping_tab, { 'i', 's' }),
+                    ['<S-Tab>'] = cmp.mapping(mapping_shift_tab, { 'i', 's' }),
                 },
                 sources = {
                     { name = 'calc' },
@@ -685,13 +789,13 @@ require('packer').startup(function()
                     format = function(entry, vim_item)
                         vim_item.kind = lspkind[vim_item.kind]
                         vim_item.menu = ({
-                            calc = "[Calc]",
-                            nvim_lsp = "[LSP]",
-                            path = "[Path]",
-                            luasnip = "[Snippet]",
-                            latex_symbols = "[Latex]",
-                            neorg = "[Neorg]",
-                            buffer = "[Buffer]",
+                            calc = '[Calc]',
+                            nvim_lsp = '[LSP]',
+                            path = '[Path]',
+                            luasnip = '[Snippet]',
+                            latex_symbols = '[Latex]',
+                            neorg = '[Neorg]',
+                            buffer = '[Buffer]',
                         })[entry.source.name]
                         return vim_item
                     end
@@ -745,8 +849,8 @@ require('packer').startup(function()
             cmp.setup.cmdline('/', {
                 mapping = {
                     ['<CR>'] = cmp.mapping.confirm({ select = true }),
-                    ["<Tab>"] = cmp.mapping(mapping_tab, { "c" }),
-                    ["<S-Tab>"] = cmp.mapping(mapping_shift_tab, { "c" }),
+                    ['<Tab>'] = cmp.mapping(mapping_tab, { 'c' }),
+                    ['<S-Tab>'] = cmp.mapping(mapping_shift_tab, { 'c' }),
                 },
                 sources = {
                     {
@@ -767,8 +871,8 @@ require('packer').startup(function()
             cmp.setup.cmdline(':', {
                 mapping = {
                     ['<CR>'] = cmp.mapping.confirm({ select = true }),
-                    ["<Tab>"] = cmp.mapping(mapping_tab, { "c" }),
-                    ["<S-Tab>"] = cmp.mapping(mapping_shift_tab, { "c" }),
+                    ['<Tab>'] = cmp.mapping(mapping_tab, { 'c' }),
+                    ['<S-Tab>'] = cmp.mapping(mapping_shift_tab, { 'c' }),
                 },
                 sources = {
                     --{ name = 'path' },
@@ -787,11 +891,14 @@ require('packer').startup(function()
     }
 
     use {
-        'simrat39/symbols-outline.nvim',
-        cmd = 'SymbolsOutline',
+        'stevearc/aerial.nvim',
         config = function()
-            vim.g.symbols_outline = {
-                width = 15,
+            require('aerial').setup {
+                layout = {
+                    placement = 'edge'
+                },
+                attach_mode = 'global',
+                highlight_on_hover = true,
             }
         end
     }
@@ -807,13 +914,6 @@ require('packer').startup(function()
                     diffview = true
                 }
             }
-        end
-    }
-
-    use {
-        'ray-x/lsp_signature.nvim',
-        config = function()
-            require('lsp_signature').setup()
         end
     }
 
@@ -846,9 +946,9 @@ require('packer').startup(function()
 
             dap.configurations.cpp = {
                 {
-                    name = "Launch",
-                    type = "lldb",
-                    request = "launch",
+                    name = 'Launch',
+                    type = 'lldb',
+                    request = 'launch',
                     program = function()
                         return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
                     end,
@@ -872,11 +972,11 @@ require('packer').startup(function()
                 {
                     type = 'python';
                     request = 'launch';
-                    name = "Launch file";
+                    name = 'Launch file';
 
                     -- Options below are for debugpy, see https://github.com/microsoft/debugpy/wiki/Debug-configuration-settings for supported options
 
-                    program = "${file}";
+                    program = '${file}';
                     pythonPath = function()
                         local cwd = vim.fn.getcwd()
                         if vim.fn.executable(cwd .. '/venv/bin/python') == 1 then
@@ -898,42 +998,42 @@ require('packer').startup(function()
         'rcarriga/nvim-dap-ui',
         requires = 'mfussenegger/nvim-dap',
         config = function()
-            require("dapui").setup {
-                icons = { expanded = "▾", collapsed = "▸" },
+            require('dapui').setup {
+                icons = { expanded = '▾', collapsed = '▸' },
                 mappings = {
                     -- Use a table to apply multiple mappings
-                    expand = { "<CR>", "<2-LeftMouse>" },
-                    open = "o",
-                    remove = "d",
-                    edit = "e",
-                    repl = "r",
+                    expand = { '<CR>', '<2-LeftMouse>' },
+                    open = 'o',
+                    remove = 'd',
+                    edit = 'e',
+                    repl = 'r',
                 },
                 layouts = {
                     {
                         elements = {
                             -- Elements can be strings or table with id and size keys.
-                            { id = "scopes", size = 0.25 },
-                            "breakpoints",
-                            "stacks",
-                            "watches",
+                            { id = 'scopes', size = 0.25 },
+                            'breakpoints',
+                            'stacks',
+                            'watches',
                         },
                         size = 40,
-                        position = "left",
+                        position = 'left',
                     },
                     {
                         elements = {
-                            "repl",
-                            "console",
+                            'repl',
+                            'console',
                         },
                         size = 10,
-                        position = "bottom",
+                        position = 'bottom',
                     },
                 },
                 floating = {
                     max_height = nil, -- These can be integers or a float between 0 and 1.
                     max_width = nil, -- Floats will be treated as percentage of your screen.
                     mappings = {
-                        close = { "q", "<Esc>" },
+                        close = { 'q', '<Esc>' },
                     },
                 },
                 windows = { indent = 1 },
@@ -950,9 +1050,9 @@ require('packer').startup(function()
     }
 
     use {
-        "vuki656/package-info.nvim",
+        'vuki656/package-info.nvim',
         commit = '10de4d0d50ec1d4d26118c4aa067a9d09e370c9c',
-        requires = "MunifTanjim/nui.nvim",
+        requires = 'MunifTanjim/nui.nvim',
         config = function()
             require('package-info').setup()
         end
@@ -977,6 +1077,12 @@ require('packer').startup(function()
     use {
         'mtikekar/vim-bsv',
         ft = 'bsv'
+    }
+
+    use {
+        'Serenityos/jakt',
+        rtp = 'editors/vim',
+        ft = 'jakt'
     }
 
     -- Other
@@ -1019,52 +1125,44 @@ require('packer').startup(function()
         config = function()
             require('neorg').setup {
                 load = {
-                    ["core.defaults"] = {},
-                    ["core.norg.dirman"] = {
+                    ['core.defaults'] = {},
+                    ['core.norg.dirman'] = {
                         config = {
                             workspaces = {
-                                home = "~/Documents/neorg",
+                                home = '~/Documents/neorg',
                             },
                             autochdir = true,
                             index = 'index.norg',
                         }
                     },
-                    ["core.norg.concealer"] = {
+                    ['core.norg.concealer'] = {
                         config = {
                         }
                     },
-                    ["core.norg.completion"] = {
+                    ['core.norg.completion'] = {
                         config = {
-                            engine = "nvim-cmp"
+                            engine = 'nvim-cmp'
                         }
                     },
-                    ["core.norg.qol.toc"] = {
+                    ['core.norg.qol.toc'] = {
                         config = {
-                            toc_split_placement = "left"
+                            toc_split_placement = 'left'
                         }
                     },
-                    ["core.keybinds"] = {
+                    ['core.keybinds'] = {
                         config = {
                             default_keybinds = false,
                             hook = function(keybinds)
-                                keybinds.remap_event("norg", "n", "<cr>", "core.norg.esupports.hop.hop-link")
-                                keybinds.remap_event("toc-split", "n", "<cr>", "core.norg.qol.toc.hop-toc-link")
-                                keybinds.remap_event("toc-split", "n", "q", "core.norg.qol.toc.close")
-                                keybinds.remap_event("toc-split", "n", "<esc>", "core.norg.qol.toc.close")
+                                keybinds.remap_event('norg', 'n', '<cr>', 'core.norg.esupports.hop.hop-link')
+                                keybinds.remap_event('toc-split', 'n', '<cr>', 'core.norg.qol.toc.hop-toc-link')
+                                keybinds.remap_event('toc-split', 'n', 'q', 'core.norg.qol.toc.close')
+                                keybinds.remap_event('toc-split', 'n', '<esc>', 'core.norg.qol.toc.close')
                             end,
                         }
                     }
                 }
             }
         end,
-    }
-
-    use {
-        'simnalamburt/vim-mundo',
-        cmd = 'MundoToggle',
-        config = function()
-            vim.g.mundo_right = 1
-        end
     }
 
     use {
@@ -1101,6 +1199,7 @@ require('packer').startup(function()
         config = function()
             require('nvim-autopairs').setup {
                 disable_filetype = { 'TelescopePrompt' , 'vim' },
+                break_undo = false, -- Workaround for pairs breaking smjonas/live-command.nvim
             }
         end
     }
@@ -1172,7 +1271,7 @@ require('packer').startup(function()
                     h = { '<cmd>Telescope help_tags<cr>', 'Find Help' },
                     s = { '<cmd>Telescope symbols<cr>', 'Find Symbols' },
                     p = { '<cmd>Telescope project<cr>', 'Find Projects' },
-                    m = { function() require('telescope.builtin').man_pages({ sections = { "1", "2", "3", "4", "5", "6", "7", "8", "9" } }) end, 'Find Man Pages' },
+                    m = { function() require('telescope.builtin').man_pages({ sections = { '1', '2', '3', '4', '5', '6', '7', '8', '9' } }) end, 'Find Man Pages' },
                 },
                 -- LSP
                 ['K'] = { vim.lsp.buf.hover, 'Hover' },
@@ -1191,8 +1290,7 @@ require('packer').startup(function()
                     name = 'Toggle',
                     t = { '<cmd>NvimTreeToggle<cr>', 'Toggle NvimTree' },
                     T = { '<cmd>TroubleToggle todo<cr>', 'Toggle Todos' },
-                    u = { '<cmd>MundoToggle<cr>', 'Toggle Undo Tree' },
-                    s = { '<cmd>SymbolsOutline<cr>', 'Toggle Symbols Outline' },
+                    s = { '<cmd>AerialToggle<cr>', 'Toggle Symbols Outline' },
                     g = { function() require('neogit').open({ kind = 'split' }) end, 'Neogit' },
                     d = { '<cmd>TroubleToggle document_diagnostics<cr>', 'Document Diagnostics' },
                     D = { '<cmd>TroubleToggle workspace_diagnostics<cr>', 'Workspace Diagnostics' },
@@ -1276,8 +1374,8 @@ function notify_until_success(message, log_level, options)
 
     notification_timer:start(0, 500, function()
         counter = counter + 1
-        local ran, _ = pcall(vim.notify, message, log_level, options)
-        if (ran or counter >= max_tries) then
+        if (ran_nvim_notify_setup or counter >= max_tries) then
+            require('notify')(message, log_level, options)
             notification_timer:close()
         end
     end)
@@ -1311,13 +1409,13 @@ vim.cmd [[autocmd BufWinEnter,WinEnter term://* startinsert]]
 
 --- Format code on save
 vim.api.nvim_create_augroup('fmt', { clear = true })
-vim.api.nvim_create_autocmd("BufWritePre", {
+vim.api.nvim_create_autocmd('BufWritePre', {
     group = 'fmt',
     callback = function()
         if vim.bo.filetype == 'cpp' and vim.fn.filereadable('.clang-format') == 1 then
-            vim.lsp.buf.format({ async = false })
+            vim.lsp.buf.format({ timeout_ms = 2000 })
         elseif vim.bo.filetype == 'rust' then
-            vim.lsp.buf.format({ async = false })
+            vim.lsp.buf.format({ timeout_ms = 2000 })
         end
     end
 })
@@ -1388,3 +1486,59 @@ vim.opt.switchbuf:append('useopen')
 vim.opt.timeoutlen = 500
 vim.opt.undofile = true
 vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions
+
+--- -----------------------
+---     COMMANDS
+--- -----------------------
+
+function Sort()
+    -- TODO: Support bang to reverse sort
+    -- TODO: Respect end pos
+    -- TODO: Handle unset mark
+    local start_pos = vim.fn.getpos("'<")
+    local end_pos = vim.fn.getpos("'>")
+    vim.cmd(string.format("'<,'>sort /.\\{%s\\}/", start_pos[2]))
+end
+
+vim.cmd[[command! -range=% -bang Sort lua Sort()]]
+
+-- Workaround for https://github.com/neovim/neovim/issues/19649 taken from https://github.com/neovim/neovim/issues/19649#issuecomment-1327287313
+local function getlines(location)
+    local uri = location.targetUri or location.uri
+    if uri == nil then
+        return
+    end
+    local bufnr = vim.uri_to_bufnr(uri)
+    if not vim.api.nvim_buf_is_loaded(bufnr) then
+        vim.fn.bufload(bufnr)
+    end
+    local range = location.targetRange or location.range
+
+    local lines = vim.api.nvim_buf_get_lines(bufnr, range.start.line, range['end'].line+1, false)
+    return table.concat(lines, '\n')
+end
+
+vim.diagnostic.config({float = {format = function(diag)
+    local message = diag.message
+    local client = vim.lsp.get_active_clients({name = message.source})[1]
+    if not client then
+        return diag.message
+    end
+
+    local relatedInfo = {messages = {}, locations = {}}
+    if diag.user_data.lsp.relatedInformation ~= nil then
+        for _, info in ipairs(diag.user_data.lsp.relatedInformation) do
+            table.insert(relatedInfo.messages, info.message)
+            table.insert(relatedInfo.locations, info.location)
+        end
+    end
+
+    for i, loc in ipairs(vim.lsp.util.locations_to_items(relatedInfo.locations, client.offset_encoding)) do
+        message = string.format('%s\n%s (%s:%d):\n\t%s', message, relatedInfo.messages[i],
+            vim.fn.fnamemodify(loc.filename, ':.'), loc.lnum,
+            getlines(relatedInfo.locations[i]))
+    end
+
+    return message
+end}})
+-- Workaround end

@@ -50,7 +50,7 @@ window#waybar.hidden {
 }
 
 #workspaces button.urgent {
-    background-color: #eb4d4b;
+    background-color: @color-red;
 }
 
 #workspaces button.persistent {

@@ -1,6 +1,5 @@
 # Required Applications
-# - swayidle
-# - swaylock
+# - slock
 # - rofi
 # - kitty
 # - dunst
@@ -44,7 +43,7 @@ set $color-fg #d4be98
 # ------
 # Output
 # ------
-exec_always ~/.fehbg
+exec_always --no-startup-id ~/.fehbg
 
 # ----------
 # Status Bar
@@ -68,15 +67,15 @@ client.unfocused        $color-bg-dark  $color-bg-dark    $color-fg   #ffffff   
 # -------------
 font "pango:NotoSans 10"
 smart_gaps on
-smart_borders on
+#smart_borders on
 gaps inner 5
 title_align center
 
-exec_always gsettings set org.gnome.desktop.interface gtk-theme $gtk-theme
-exec_always gsettings set org.gnome.desktop.interface icon-theme $gtk-icon-theme
-exec_always gsettings set org.gnome.desktop.interface cursor-theme $cursor-theme
-exec_always gsettings set org.gnome.desktop.interface font-name $font
-exec_always gsettings set org.gnome.desktop.interface monospace-font-name $monospace-font
+exec_always --no-startup-id gsettings set org.gnome.desktop.interface gtk-theme $gtk-theme
+exec_always --no-startup-id gsettings set org.gnome.desktop.interface icon-theme $gtk-icon-theme
+exec_always --no-startup-id gsettings set org.gnome.desktop.interface cursor-theme $cursor-theme
+exec_always --no-startup-id gsettings set org.gnome.desktop.interface font-name $font
+exec_always --no-startup-id gsettings set org.gnome.desktop.interface monospace-font-name $monospace-font
 
 # ------------
 # Window rules
@@ -88,9 +87,7 @@ assign [class="Steam"] $ws5
 assign [class="discord"] $ws7
 assign [class="thunderbird"] $ws6
 
-for_window [class="zoom"] floating enable; inhibit_idle open
-for_window [class="Steam"] inhibit_idle none
-for_window [class="steam_app"] inhibit_idle open
+for_window [class="zoom"] floating enable
 for_window [class="steam_app" title="Origin"] floating enable
 for_window [class="Birdy3d"] floating enable
 for_window [class="Thunderbird" title=".*Erinnerung(en)?$"] floating enable
@@ -134,15 +131,15 @@ bindsym $mod+Shift+9 move container to workspace $ws9
 bindsym $mod+Shift+0 move container to workspace $ws10
 
 # Multimedia Keys
-bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
-bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle
-bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5%
-bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +5%
-bindsym XF86AudioPlay exec playerctl-current play-pause
-bindsym XF86AudioPrev exec playerctl-current previous
-bindsym XF86AudioNext exec playerctl-current next
-bindsym XF86MonBrightnessDown exec brightnessctl set 5%-
-bindsym XF86MonBrightnessUp exec brightnessctl set +5%
+bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5%
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5%
+bindsym XF86AudioPlay exec --no-startup-id playerctl-current play-pause
+bindsym XF86AudioPrev exec --no-startup-id playerctl-current previous
+bindsym XF86AudioNext exec --no-startup-id playerctl-current next
+bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%-
+bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +5%
 
 # Start Applications
 bindsym $mod+Return exec $term
@@ -191,9 +188,18 @@ bindsym Control+Mod4+Mod1+l --release exec --no-startup-id slock
 bindsym Control+Mod4+Mod1+s exec --no-startup-id systemctl poweroff
 bindsym Control+Mod4+Mod1+r exec --no-startup-id systemctl reboot
 
+# Scratchpad
+for_window [instance="keepassxc"] move scratchpad
+for_window [instance="keepassxc" title=".*Unlock Database.*"] move workspace current; move position center
+bindsym $mod+o scratchpad show
+
 # ---------
 # Autostart
 # ---------
-exec --no-startup-id picom --experimental-backend
+exec --no-startup-id picom
 exec --no-startup-id xss-lock slock
 exec --no-startup-id dunst
+
+exec --no-startup-id discord &
+exec --no-startup-id thunderbird &
+exec --no-startup-id keepassxc &
