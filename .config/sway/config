@@ -237,15 +237,14 @@ include ~/.config/sway/conf.d/*
 # ---------
 exec dunst
 
-# TODO: dpms -> power for next sway release
 # dpms while screensaver is active
 # dpms while screensaver is inactive
 # screen locking
 exec swayidle -w \
-    timeout 10 'pgrep swaylock && swaymsg "output * dpms off"' \
-    resume 'pgrep swaylock && swaymsg "output * dpms on"' \
-    timeout 600 'swaymsg "output * dpms off"' \
-    resume 'swaymsg "output * dpms on"' \
+    timeout 10 'pgrep swaylock && swaymsg "output * power off"' \
+    resume 'pgrep swaylock && swaymsg "output * power on"' \
+    timeout 600 'swaymsg "output * power off"' \
+    resume 'swaymsg "output * power on"' \
     timeout 605 'swaylock -f -c 282828' \
     before-sleep 'playerctl pause' \
     before-sleep 'swaylock -f -c 282828' \

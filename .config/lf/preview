@@ -9,6 +9,7 @@ X=$4
 Y=$5
 
 MAX_IMAGE_WIDTH=1280
+TIMEOUT_SECONDS=2
 
 display_image() {
     local image="$1"
@@ -27,6 +28,16 @@ display_image_inplace() {
 
 display_image_cache() {
     display_image "$IMAGE_CACHE_PATH"
+}
+
+cache_if_needed_and_display_image() {
+    local image="$1"
+    local image_width="$(identify -format '%w %h' "$image")"
+    if (( "$image_width" < "$MAX_IMAGE_WIDTH" )); then
+        display_image_inplace
+    else
+        convert -geometry "$MAX_IMAGE_WIDTH"x -- "${image}" "${IMAGE_CACHE_PATH}" && display_image_cache
+    fi
 }
 
 LF_CACHE="$HOME/.cache/lf_images"
@@ -49,9 +60,9 @@ handle_mime() {
         ## HTML
         text/html)
             # Preview as text conversion
-            w3m -dump "${FILE_PATH}" && exit 1
-            lynx -dump -- "${FILE_PATH}" && exit 1
-            elinks -dump "${FILE_PATH}" && exit 1
+            timeout $TIMEOUT_SECONDS w3m -dump "${FILE_PATH}" && exit 1
+            timeout $TIMEOUT_SECONDS lynx -dump -- "${FILE_PATH}" && exit 1
+            timeout $TIMEOUT_SECONDS elinks -dump "${FILE_PATH}" && exit 1
             exit 1;;
 
         ## Text
@@ -68,7 +79,7 @@ handle_mime() {
                 -jpeg -tiffcompression jpeg \
                 -- "${FILE_PATH}" "${IMAGE_CACHE_PATH}" &&
             mv "${IMAGE_CACHE_PATH}.jpg" "${IMAGE_CACHE_PATH}" &&
-            display_image_cache
+            cache_if_needed_and_display_image "$IMAGE_CACHE_PATH"
             exit 1;;
 
         ## SVG
@@ -78,18 +89,13 @@ handle_mime() {
 
         ## Image
         image/*)
-            local image_width="$(identify -format '%w %h' "$FILE_PATH")"
-            if (( "$image_width" < "$MAX_IMAGE_WIDTH" )); then
-                display_image_inplace
-            else
-                convert -geometry "$MAX_IMAGE_WIDTH"x -- "${FILE_PATH}" "${IMAGE_CACHE_PATH}" && display_image_cache
-            fi
+            cache_if_needed_and_display_image "$FILE_PATH"
             exit 1;;
 
         ## Video
         video/*)
             # Get embedded thumbnail
-            ffmpeg -i "${FILE_PATH}" -map 0:v -map -0:V -c copy "${IMAGE_CACHE_PATH}" && display_image_cache && exit 1
+            ffmpeg -i "${FILE_PATH}" -map 0:v -map -0:V -c copy "${IMAGE_CACHE_PATH}" && cache_if_needed_and_display_image "$IMAGE_CACHE_PATH" && exit 1
 
             # Get frame 10% into video
             local video_width=$(ffprobe -v error -show_entries stream=width -of default=nw=1:nk=1 "${FILE_PATH}" | head -n1)
@@ -101,29 +107,29 @@ handle_mime() {
         audio/*)
             # Get embedded thumbnail
             ffmpeg -i "${FILE_PATH}" -map 0:v -map -0:V -c copy \
-              "${IMAGE_CACHE_PATH}" && display_image_cache && exit 1
+              "${IMAGE_CACHE_PATH}" && cache_if_needed_and_display_image "$IMAGE_CACHE_PATH" && exit 1
             exit 1;;
 
         ## OpenDocument
         application/vnd.oasis.opendocument*)
             # Preview as text conversion
-            odt2txt "${FILE_PATH}"
+            timeout $TIMEOUT_SECONDS odt2txt "${FILE_PATH}"
             exit 1;;
 
         ## Archives
         application/zip|application/gzip|application/zstd|application/x-tar)
-            atool --list -- "${FILE_PATH}" && exit 1
-            bsdtar --list --file "${FILE_PATH}" && exit 1
+            timeout $TIMEOUT_SECONDS atool --list -- "${FILE_PATH}" && exit 1
+            timeout $TIMEOUT_SECONDS bsdtar --list --file "${FILE_PATH}" && exit 1
             exit 1;;
 
         application/x-7z-compressed)
             # Avoid password prompt by providing empty password
-            7z l -p -- "${FILE_PATH}"
+            timeout $TIMEOUT_SECONDS 7z l -p -- "${FILE_PATH}"
             exit 1;;
 
         application/vnd.rar)
             # Avoid password prompt by providing empty password
-            unrar lt -p- -- "${FILE_PATH}"
+            timeout $TIMEOUT_SECONDS unrar lt -p- -- "${FILE_PATH}"
             exit 1;;
     esac
 }

@@ -606,6 +606,14 @@ require('packer').startup(function()
                 local hl = 'DiagnosticSign' .. type
                 vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = '' })
             end
+
+            vim.lsp.handlers['textDocument/publishDiagnostics'] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
+                virtual_text = true,
+                signs = true,
+                underline = true,
+                update_in_insert = true, -- Fix for diagnostics sometimes not updating
+                severity_sort = true
+            })
         end
     }
 
@@ -615,7 +623,7 @@ require('packer').startup(function()
         config = function()
             require('nvim-treesitter.configs').setup {
                 -- NOTE: comment parser is slow
-                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
+                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'markdown_inline', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
                 },
@@ -1428,6 +1436,25 @@ vim.api.nvim_create_autocmd('TextYankPost', {
             timeout=200
         }
     end
+})
+
+--- -----------------------
+---        FILETYPES
+--- -----------------------
+
+vim.filetype.add({
+    extension = {
+        sh = function(path, bufnr)
+            local content = vim.filetype.getlines(bufnr, 1)
+            if vim.filetype.matchregex(content, [[fish]]) then
+                return 'fish'
+            elseif vim.filetype.matchregex(content, [[bash]]) then
+                return 'bash'
+            else
+                return 'sh'
+            end
+        end
+    }
 })
 
 --- -----------------------
