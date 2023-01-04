@@ -57,9 +57,14 @@ require('packer').startup(function()
             vim.cmd('colorscheme gruvbox-flat')
 
             vim.defer_fn(function()
-                for i = 0, 15, 1 do
-                    vim.g['terminal_color_' .. i] = nil
-                end
+                vim.g.terminal_color_0 = '#282828'
+                vim.g.terminal_color_1 = '#cc241d'
+                vim.g.terminal_color_2 = '#98971a'
+                vim.g.terminal_color_3 = '#d79921'
+                vim.g.terminal_color_4 = '#458588'
+                vim.g.terminal_color_5 = '#b16286'
+                vim.g.terminal_color_6 = '#689d6a'
+                vim.g.terminal_color_7 = '#a89984'
             end, 0)
         end
     }
@@ -316,6 +321,7 @@ require('packer').startup(function()
     -- FIXME: not working in neovide with multigrid: https://github.com/folke/noice.nvim/issues/17 https://github.com/neovim/neovim/pull/21080
     use {
         'folke/noice.nvim',
+        tag = '*',
         requires = 'MunifTanjim/nui.nvim',
         config = function()
             require('noice').setup {
@@ -360,7 +366,7 @@ require('packer').startup(function()
                     command_palette = true, -- position the cmdline and popupmenu together
                     long_message_to_split = true, -- long messages will be sent to a split
                     inc_rename = false, -- enables an input dialog for inc-rename.nvim
-                    lsp_doc_border = true, -- add a border to hover docs and signature help
+                    lsp_doc_border = false, -- add a border to hover docs and signature help
                 },
                 views = {
                     mini = {
@@ -443,7 +449,9 @@ require('packer').startup(function()
     use {
         'phaazon/hop.nvim',
         config = function()
-            require('hop').setup()
+            require('hop').setup {
+                keys = 'asdghklöqwertyuiopzxcvbnmfjä'
+            }
         end
     }
 
@@ -531,6 +539,7 @@ require('packer').startup(function()
     -- Coding
     use {
         'neovim/nvim-lspconfig',
+        tag = '*',
         requires = 'hrsh7th/cmp-nvim-lsp',
         config = function()
             local lspconfig = require('lspconfig')
@@ -546,23 +555,6 @@ require('packer').startup(function()
 
                     if client.server_capabilities.document_formatting then
                         vim.api.nvim_buf_set_option(bufnr, 'formatexpr', 'v:lua.vim.lsp.formatexpr()')
-                    end
-
-                    if client.server_capabilities.documentHighlightProvider then
-                        vim.api.nvim_create_augroup('lsp_document_highlight', { clear = true })
-                        vim.api.nvim_clear_autocmds { buffer = bufnr, group = 'lsp_document_highlight' }
-                        vim.api.nvim_create_autocmd('CursorHold', {
-                            callback = vim.lsp.buf.document_highlight,
-                            buffer = bufnr,
-                            group = 'lsp_document_highlight',
-                            desc = 'Document Highlight',
-                        })
-                        vim.api.nvim_create_autocmd('CursorMoved', {
-                            callback = vim.lsp.buf.clear_references,
-                            buffer = bufnr,
-                            group = 'lsp_document_highlight',
-                            desc = 'Clear All the References',
-                        })
                     end
                 end
             end
@@ -619,6 +611,7 @@ require('packer').startup(function()
 
     use {
         'nvim-treesitter/nvim-treesitter',
+        tag = '*',
         run = ':TSUpdate',
         config = function()
             require('nvim-treesitter.configs').setup {
@@ -658,6 +651,29 @@ require('packer').startup(function()
                     },
                 },
             }
+        end
+    }
+
+    use {
+        'RRethy/vim-illuminate',
+        config = function()
+            require('illuminate').configure {
+                providers = {
+                    'lsp',
+                    'treesitter',
+                },
+                delay = 100,
+            }
+
+            vim.api.nvim_create_augroup('illuminate_augroup', { clear = true })
+            vim.api.nvim_create_autocmd('VimEnter', {
+                group = 'illuminate_augroup',
+                callback = function()
+                    vim.api.nvim_set_hl(0, 'IlluminatedWordText', { link = 'CursorLine', underline = false })
+                    vim.api.nvim_set_hl(0, 'IlluminatedWordRead', { link = 'CursorLine', underline = false })
+                    vim.api.nvim_set_hl(0, 'IlluminatedWordWrite', { link = 'CursorLine', underline = false })
+                end
+            })
         end
     }
 
@@ -731,28 +747,6 @@ require('packer').startup(function()
                 end
             end
 
-            local lspkind_comparator = function(conf)
-                local lsp_types = require('cmp.types').lsp
-                return function(entry1, entry2)
-                    if entry1.source.name ~= 'nvim_lsp' then
-                        if entry2.source.name == 'nvim_lsp' then
-                            return false
-                        else
-                            return nil
-                        end
-                    end
-                    local kind1 = lsp_types.CompletionItemKind[entry1:get_kind()]
-                    local kind2 = lsp_types.CompletionItemKind[entry2:get_kind()]
-
-                    local priority1 = conf.kind_priority[kind1] or 0
-                    local priority2 = conf.kind_priority[kind2] or 0
-                    if priority1 == priority2 then
-                        return nil
-                    end
-                    return priority2 < priority1
-                end
-            end
-
             cmp.setup({
                 completion = {
                     completeopt = 'menuone,noselect',
@@ -795,6 +789,15 @@ require('packer').startup(function()
                 },
                 formatting = {
                     format = function(entry, vim_item)
+                        local ELLIPSIS_CHAR = '…'
+                        local MAX_LABEL_WIDTH = 30
+
+                        local label = vim_item.abbr
+                        local truncated_label = vim.fn.strcharpart(label, 0, MAX_LABEL_WIDTH)
+                        if truncated_label ~= label then
+                            vim_item.abbr = truncated_label .. ELLIPSIS_CHAR
+                        end
+
                         vim_item.kind = lspkind[vim_item.kind]
                         vim_item.menu = ({
                             calc = '[Calc]',
@@ -810,43 +813,11 @@ require('packer').startup(function()
                 },
                 sorting = {
                     comparators = {
-                        lspkind_comparator({
-                            kind_priority = {
-                                Field = 11,
-                                Property = 11,
-                                Constant = 10,
-                                Enum = 10,
-                                EnumMember = 10,
-                                Event = 10,
-                                Function = 10,
-                                Method = 10,
-                                Operator = 10,
-                                Reference = 10,
-                                Struct = 10,
-                                Variable = 10,
-                                File = 8,
-                                Folder = 8,
-                                Class = 5,
-                                Color = 5,
-                                Module = 5,
-                                Keyword = 2,
-                                Constructor = 1,
-                                Interface = 1,
-                                Snippet = 0,
-                                Text = 1,
-                                TypeParameter = 1,
-                                Unit = 1,
-                                Value = 1,
-                            },
-                        }),
+                        cmp.config.compare.locality,
                         cmp.config.compare.recently_used,
                         cmp.config.compare.score,
-                        cmp.config.compare.length,
                         cmp.config.compare.offset,
-                        --cmp.config.compare.exact,
-                        --cmp.config.compare.kind,
-                        --cmp.config.compare.sort_text,
-                        --cmp.config.compare.order,
+                        cmp.config.compare.order,
                     },
                 },
                 experimental = {
@@ -855,6 +826,13 @@ require('packer').startup(function()
             })
 
             cmp.setup.cmdline('/', {
+                formatting = {
+                    format = function(entry, vim_item)
+                        vim_item.kind = nil
+                        vim_item.menu = nil
+                        return vim_item
+                    end
+                },
                 mapping = {
                     ['<CR>'] = cmp.mapping.confirm({ select = true }),
                     ['<Tab>'] = cmp.mapping(mapping_tab, { 'c' }),
@@ -877,13 +855,19 @@ require('packer').startup(function()
             })
 
             cmp.setup.cmdline(':', {
+                formatting = {
+                    format = function(entry, vim_item)
+                        vim_item.kind = nil
+                        vim_item.menu = nil
+                        return vim_item
+                    end
+                },
                 mapping = {
                     ['<CR>'] = cmp.mapping.confirm({ select = true }),
                     ['<Tab>'] = cmp.mapping(mapping_tab, { 'c' }),
                     ['<S-Tab>'] = cmp.mapping(mapping_shift_tab, { 'c' }),
                 },
                 sources = {
-                    --{ name = 'path' },
                     { name = 'cmdline' }
                 }
             })
@@ -920,7 +904,8 @@ require('packer').startup(function()
             require('neogit').setup{
                 integrations = {
                     diffview = true
-                }
+                },
+                disable_commit_confirmation = true -- Workaround for https://github.com/folke/noice.nvim/issues/232
             }
         end
     }
@@ -1059,7 +1044,7 @@ require('packer').startup(function()
 
     use {
         'vuki656/package-info.nvim',
-        commit = '10de4d0d50ec1d4d26118c4aa067a9d09e370c9c',
+        tag = '*',
         requires = 'MunifTanjim/nui.nvim',
         config = function()
             require('package-info').setup()
@@ -1125,6 +1110,7 @@ require('packer').startup(function()
 
     use {
         'nvim-neorg/neorg',
+        tag = '*',
         requires = 'nvim-lua/plenary.nvim',
         run = ':Neorg sync-parsers',
         after = 'nvim-treesitter',
@@ -1238,6 +1224,7 @@ require('packer').startup(function()
                 }
             }
 
+            -- normal
             wk.register {
                 -- buffers
                 ['<m-q>'] = { '<cmd>BufferClose<cr>', 'Close Buffer' },
@@ -1277,11 +1264,13 @@ require('packer').startup(function()
                     l = { '<cmd>Telescope live_grep<cr>', 'Find Lines' },
                     b = { '<cmd>Telescope buffers<cr>', 'Find Buffers' },
                     h = { '<cmd>Telescope help_tags<cr>', 'Find Help' },
-                    s = { '<cmd>Telescope symbols<cr>', 'Find Symbols' },
+                    s = { function() require('telescope.builtin').lsp_dynamic_workspace_symbols() end, 'Find LSP Symbols' },
+                    S = { '<cmd>Telescope symbols<cr>', 'Find Symbols' },
                     p = { '<cmd>Telescope project<cr>', 'Find Projects' },
                     m = { function() require('telescope.builtin').man_pages({ sections = { '1', '2', '3', '4', '5', '6', '7', '8', '9' } }) end, 'Find Man Pages' },
+                    r = { function() require('telescope.builtin').lsp_references({ jump_type = 'never' }) end, 'Find LSP References' },
                 },
-                -- LSP
+                -- LSP / Diagnostics
                 ['K'] = { vim.lsp.buf.hover, 'Hover' },
                 ['g'] = {
                     h = { '<cmd>TroubleToggle lsp_references<cr>', 'References' },
@@ -1318,8 +1307,8 @@ require('packer').startup(function()
                 ['<F11>'] = { dap.step_into, 'Step into' },
                 ['<F12>'] = { dap.step_out, 'Step out' },
                 -- hop
-                ['s'] = { hop.hint_char2, 'Hop char2' },
-                ['S'] = { hop.hint_words, 'Hop word' },
+                ['s'] = { hop.hint_words, 'Hop word' },
+                ['S'] = { function() hop.hint_words({ multi_windows = true }) end, 'Hop word Multi Window' },
                 -- move line
                 ['<m-c-k>'] = { ':m -2<cr>==', 'Move line up' },
                 ['<m-c-j>'] = { ':m +1<cr>==', 'Move line down' },
@@ -1338,6 +1327,7 @@ require('packer').startup(function()
                 ['Ä'] = { '}', '', noremap = false },
             }
 
+            -- visual
             wk.register({
                 -- move line
                 ['<m-c-k>'] = { ':m \'<-2<cr>gv=gv', 'Move lines up' },
@@ -1353,6 +1343,7 @@ require('packer').startup(function()
                 ['ää'] = { ']]', '' },
                 ['Ö'] = { '{', '', noremap = false },
                 ['Ä'] = { '}', '', noremap = false },
+                ['n'] = { ':Normal ', 'Execute normal mode command on lines', silent = false }
             }, { mode = 'v' })
 
             -- terminal
@@ -1367,6 +1358,17 @@ require('packer').startup(function()
                 ['<m-q>'] = { function() if vim.bo.buflisted then vim.cmd'BufferClose!' else vim.cmd'bd!' end end, 'Close Buffer' },
                 ['<m-Q>'] = { function() if vim.bo.buflisted then vim.cmd'BufferClose!' else vim.cmd'bd!' end end, 'Close Buffer' },
             }, { mode = 't' })
+
+            -- cmdline
+            wk.register({
+                ['<c-h>'] = { '<Left>', 'Cursor left' },
+                ['<c-l>'] = { '<Right>', 'Cursor right' },
+                ['<c-k>'] = { '<Up>', 'Recall older command-line from history' },
+                ['<c-j>'] = { '<Down>', 'Recall more recent command-line from history' },
+                ['<c-b>'] = { '<C-Left>', 'Previous WORD' },
+                ['<c-w>'] = { '<C-Right><Right>', 'Next WORD' },
+                ['<c-e>'] = { '<Right><C-Right><Left>', 'End of next WORD' },
+            }, { mode = 'c', silent = false })
         end
     }
 end)
@@ -1420,6 +1422,7 @@ vim.api.nvim_create_augroup('fmt', { clear = true })
 vim.api.nvim_create_autocmd('BufWritePre', {
     group = 'fmt',
     callback = function()
+        -- FIXME: This is a bad solution, but sync format seems to cause the lsp server to crash. Or does it? What?
         if vim.bo.filetype == 'cpp' and vim.fn.filereadable('.clang-format') == 1 then
             vim.lsp.buf.format({ timeout_ms = 2000 })
         elseif vim.bo.filetype == 'rust' then
@@ -1512,7 +1515,7 @@ vim.opt.scrolloff = 1
 vim.opt.switchbuf:append('useopen')
 vim.opt.timeoutlen = 500
 vim.opt.undofile = true
-vim.opt.updatetime = 2000 -- Workaround to reduce delay for nvim-treesitter-refactor highlight definitions
+vim.opt.virtualedit = 'block'
 
 --- -----------------------
 ---     COMMANDS

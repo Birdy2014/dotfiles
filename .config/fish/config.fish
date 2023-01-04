@@ -13,8 +13,15 @@ if status is-interactive
     alias tm 'tmux new-session -A -s main'
     alias config '/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
     alias gap 'git add -p'
+    alias :q 'exit'
 
     set -gx MANPAGER 'nvim +Man!'
+
+    if test ! -z "$NVIM"
+        alias nvim 'nvim --server $NVIM --remote'
+    end
+
+    bind \cd true
 end
 
 if status is-login
@@ -48,7 +55,7 @@ function fish_prompt
     echo -n " $cwd "
 
     # Show git branch and dirty state
-    set -l git_branch (command git symbolic-ref HEAD 2> /dev/null | sed -e 's|^refs/heads/||')
+    set -l git_branch (command git symbolic-ref --short HEAD 2> /dev/null; or command git rev-parse --short HEAD 2> /dev/null)
     set -l git_dirty (command git status -s --ignore-submodules=dirty 2> /dev/null)
     if test -n "$git_branch"
         if test -n "$git_dirty"
@@ -66,7 +73,7 @@ function fish_prompt
 end
 
 function fish_mode_prompt
-    if [ $fish_key_bindings = fish_vi_key_bindings ]
+    if test $fish_key_bindings = fish_vi_key_bindings
         switch $fish_bind_mode
             case default
                 set_color -b red
