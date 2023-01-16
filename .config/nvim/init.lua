@@ -135,6 +135,15 @@ require('packer').startup(function()
                         { function() return vim.fn['vm#themes#statusline']() end }
                     },
                     lualine_x = {
+                        {
+                            function()
+                                local recording_register = vim.fn.reg_recording()
+                                if recording_register == '' then
+                                    return ''
+                                end
+                                return '@' .. recording_register
+                            end
+                        },
                         'encoding',
                         'fileformat',
                         'filetype'
@@ -262,6 +271,7 @@ require('packer').startup(function()
                 persist_size = true,
                 direction = 'vertical',
                 close_on_exit = true,
+                shell = vim.env.SHELL or vim.opt.shell
             }
         end
     }
@@ -414,6 +424,7 @@ require('packer').startup(function()
                 filetype = {
                     aerial = 'filetype',
                     NvimTree = 'filetype',
+                    toggleterm = 'filetype'
                 },
                 bufname = {
                     ['Neogit.*Popup'] = 'bufnr',
@@ -486,6 +497,7 @@ require('packer').startup(function()
                                 local extension = split_path[#split_path]
                                 return vim.tbl_contains(image_extensions, extension)
                             end
+
                             if is_image(filepath) and vim.fn.executable('catimg') == 1 then
                                 local term = vim.api.nvim_open_term(bufnr, {})
                                 local width = vim.api.nvim_win_get_width(opts.winid)
@@ -559,7 +571,7 @@ require('packer').startup(function()
                 end
             end
 
-            local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver', 'bashls', 'texlab' }
+            local servers = { 'clangd', 'pyright', 'rust_analyzer', 'tsserver', 'bashls', 'texlab', 'svelte' }
 
             local server_config = {
                 rust_analyzer = {
@@ -587,7 +599,7 @@ require('packer').startup(function()
                     settings = server_config[lsp] or {}
                 }
                 if lsp == 'clangd' then
-                    conf.cmd = { 'clangd', '--header-insertion=never', '--query-driver=/usr/bin/g++' }
+                    conf.cmd = { 'clangd', '--header-insertion=never' }
                 end
                 lspconfig[lsp].setup(conf)
             end
@@ -616,7 +628,7 @@ require('packer').startup(function()
         config = function()
             require('nvim-treesitter.configs').setup {
                 -- NOTE: comment parser is slow
-                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'markdown_inline', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
+                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'markdown_inline', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'svelte', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
                 },
@@ -868,7 +880,7 @@ require('packer').startup(function()
                     ['<S-Tab>'] = cmp.mapping(mapping_shift_tab, { 'c' }),
                 },
                 sources = {
-                    { name = 'cmdline' }
+                    { name = 'cmdline', keyword_pattern = [=[[^[:blank:w]]*]=] }
                 }
             })
         end
@@ -1053,16 +1065,6 @@ require('packer').startup(function()
 
     -- Languages
     use {
-        'tikhomirov/vim-glsl',
-        ft = 'glsl'
-    }
-
-    use {
-        'digitaltoad/vim-pug',
-        ft = 'pug'
-    }
-
-    use {
         'lluchs/vim-wren',
         ft = 'wren'
     }
@@ -1184,6 +1186,10 @@ require('packer').startup(function()
             require('indent-o-matic').setup {
             max_lines = 2048,
             standard_widths = { 2, 4, 8 },
+            filetype_bash = {
+                -- workaround for a very strange bug where the indent seems to only be taken from line 19???
+                skip_multiline = false
+            }
         }
         end
     }
@@ -1193,7 +1199,7 @@ require('packer').startup(function()
         config = function()
             require('nvim-autopairs').setup {
                 disable_filetype = { 'TelescopePrompt' , 'vim' },
-                break_undo = false, -- Workaround for pairs breaking smjonas/live-command.nvim
+                break_undo = false, -- Workaround for https://github.com/smjonas/live-command.nvim/issues/16
             }
         end
     }
@@ -1223,6 +1229,23 @@ require('packer').startup(function()
                     }
                 }
             }
+
+            -- tmux
+            local tmux_prefix = '<c-q>'
+            local tmux_keys = { name = 'tmux' }
+            local tmux_key_assignment = {
+                function()
+                    vim.notify('This is not tmux')
+                end,
+                'tmux key'
+            }
+            for i = 0,9 do
+                tmux_keys[tostring(i)] = tmux_key_assignment
+            end
+            -- FIXME: Add all keys
+            for _, key in pairs({ 'c', 'x', 'z', '[', ']', '-', '|' }) do
+                tmux_keys[key] = tmux_key_assignment
+            end
 
             -- normal
             wk.register {
@@ -1257,6 +1280,11 @@ require('packer').startup(function()
                     k = { '<cmd>sp<cr>', 'Split Up' },
                     l = { '<cmd>vs<cr>', 'Split Right' },
                 },
+                -- windows
+                ['<c-+>'] = { '<cmd>resize +1<cr>', 'Increase window height' },
+                ['<c-->'] = { '<cmd>resize -1<cr>', 'Decrease window height' },
+                ['<c-s-<>'] = { '<cmd>vertical resize +1<cr>', 'Increase window width' },
+                ['<c-<>'] = { '<cmd>vertical resize -1<cr>', 'Decrease window width' },
                 -- Telescope
                 ['<leader>f'] = {
                     name = 'Find',
@@ -1302,6 +1330,11 @@ require('packer').startup(function()
                     r = { dap.repl.open, 'Open REPL' },
                     l = { dap.run_last, 'Run last' },
                 },
+                -- open
+                ['<leader>o'] = {
+                    name = 'Open',
+                    t = { function() vim.cmd('terminal ' .. (vim.env.SHELL or vim.opt.shell)) end, 'Open terminal' }
+                },
                 ['<F5>'] = { dap.continue, 'Continue' },
                 ['<F10>'] = { dap.step_over, 'Step over' },
                 ['<F11>'] = { dap.step_into, 'Step into' },
@@ -1314,6 +1347,8 @@ require('packer').startup(function()
                 ['<m-c-j>'] = { ':m +1<cr>==', 'Move line down' },
                 -- start neorg
                 ['<leader>n'] = { ':Neorg workspace home<cr>', 'Start Neorg' },
+                -- tmux
+                [tmux_prefix] = tmux_keys,
                 -- other
                 ['Y'] = { 'y$', 'Yank to end', noremap = false },
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -1334,6 +1369,9 @@ require('packer').startup(function()
                 ['<m-c-j>'] = { ':m \'>+1<cr>gv=gv', 'Move lines up' },
                 -- OSCYank
                 ['<leader>y'] = { ':OSCYank<cr>', 'OSC52 Yank' },
+                -- hop
+                ['s'] = { hop.hint_words, 'Hop word' },
+                ['S'] = { function() hop.hint_words({ multi_windows = true }) end, 'Hop word Multi Window' },
                 -- Other
                 ['<'] = { '<gv', 'Unindent' },
                 ['>'] = { '>gv', 'Indent' },
@@ -1446,17 +1484,18 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 --- -----------------------
 
 vim.filetype.add({
-    extension = {
-        sh = function(path, bufnr)
-            local content = vim.filetype.getlines(bufnr, 1)
-            if vim.filetype.matchregex(content, [[fish]]) then
-                return 'fish'
-            elseif vim.filetype.matchregex(content, [[bash]]) then
-                return 'bash'
-            else
-                return 'sh'
+    pattern = {
+        ['.*'] = {
+            priority = -math.huge,
+            function(path, bufnr)
+                local content = vim.filetype.getlines(bufnr, 1)
+                if vim.filetype.matchregex(content, [[#!.*fish]]) then
+                    return 'fish'
+                elseif vim.filetype.matchregex(content, [[#!.*bash]]) then
+                    return 'bash'
+                end
             end
-        end
+        }
     }
 })
 
@@ -1516,6 +1555,7 @@ vim.opt.switchbuf:append('useopen')
 vim.opt.timeoutlen = 500
 vim.opt.undofile = true
 vim.opt.virtualedit = 'block'
+vim.opt.shell = '/bin/sh' -- Fix performance issues with nvim-tree.lua and potentially some other bugs
 
 --- -----------------------
 ---     COMMANDS
