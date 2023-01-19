@@ -123,6 +123,7 @@ require('packer').startup(function()
                     section_separators = {},
                     component_separators = '|',
                     icons_enabled = true,
+                    globalstatus = true,
                 },
                 sections = {
                     lualine_a = { {'mode', upper = true} },
@@ -600,6 +601,12 @@ require('packer').startup(function()
                 }
                 if lsp == 'clangd' then
                     conf.cmd = { 'clangd', '--header-insertion=never' }
+
+                    -- possible workaround for stuck diagnostics with clangd
+                    conf.flags = {
+                        allow_incremental_sync = false,
+                        debounce_text_changes = 500
+                    }
                 end
                 lspconfig[lsp].setup(conf)
             end
@@ -615,7 +622,7 @@ require('packer').startup(function()
                 virtual_text = true,
                 signs = true,
                 underline = true,
-                update_in_insert = true, -- Fix for diagnostics sometimes not updating
+                update_in_insert = true,
                 severity_sort = true
             })
         end
@@ -687,6 +694,11 @@ require('packer').startup(function()
                 end
             })
         end
+    }
+
+    use {
+        'L3MON4D3/LuaSnip',
+        run = "make install_jsregexp"
     }
 
     use {
@@ -1074,12 +1086,6 @@ require('packer').startup(function()
         ft = 'bsv'
     }
 
-    use {
-        'Serenityos/jakt',
-        rtp = 'editors/vim',
-        ft = 'jakt'
-    }
-
     -- Other
     use {
         'vimwiki/vimwiki',
@@ -1107,6 +1113,8 @@ require('packer').startup(function()
                     }
                 }
             }
+
+            vim.g.vimwiki_global_ext = 0
         end
     }
 
@@ -1168,15 +1176,15 @@ require('packer').startup(function()
     }
 
     use {
-        'ojroques/vim-oscyank',
+        'ojroques/nvim-osc52',
         config = function()
-            vim.api.nvim_create_autocmd('TextYankPost', {
-                callback = function()
-                    if vim.v.event.regname == '+' then
-                        vim.cmd 'OSCYankReg +'
-                    end
+            function copy()
+                if vim.v.event.operator == 'y' and vim.v.event.regname == 'c' then
+                    require('osc52').copy_register('c')
                 end
-            })
+            end
+
+            vim.api.nvim_create_autocmd('TextYankPost', { callback = copy })
         end
     }
 
@@ -1209,7 +1217,8 @@ require('packer').startup(function()
         after = {
             'nvim-dap',
             'nvim-dap-ui',
-            'hop.nvim'
+            'hop.nvim',
+            'gitsigns.nvim'
         },
         config = function()
             vim.g.mapleader = ' '
@@ -1217,6 +1226,7 @@ require('packer').startup(function()
             local dap = require('dap')
             local dapui = require('dapui')
             local hop = require('hop')
+            local gitsigns = require('gitsigns')
 
             local wk = require('which-key')
 
@@ -1349,6 +1359,9 @@ require('packer').startup(function()
                 ['<leader>n'] = { ':Neorg workspace home<cr>', 'Start Neorg' },
                 -- tmux
                 [tmux_prefix] = tmux_keys,
+                -- git
+                ['[h'] = { gitsigns.prev_hunk, 'Previous git hunk' },
+                [']h'] = { gitsigns.next_hunk, 'Next git hunk' },
                 -- other
                 ['Y'] = { 'y$', 'Yank to end', noremap = false },
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -1367,8 +1380,8 @@ require('packer').startup(function()
                 -- move line
                 ['<m-c-k>'] = { ':m \'<-2<cr>gv=gv', 'Move lines up' },
                 ['<m-c-j>'] = { ':m \'>+1<cr>gv=gv', 'Move lines up' },
-                -- OSCYank
-                ['<leader>y'] = { ':OSCYank<cr>', 'OSC52 Yank' },
+                -- osc52
+                ['<leader>y'] = { function() require('osc52').copy_visual() end, 'osc52 Yank' },
                 -- hop
                 ['s'] = { hop.hint_words, 'Hop word' },
                 ['S'] = { function() hop.hint_words({ multi_windows = true }) end, 'Hop word Multi Window' },
@@ -1512,7 +1525,6 @@ vim.opt.breakindent = true
 vim.opt.breakindentopt = 'sbr'
 vim.opt.cmdheight = 0
 vim.opt.conceallevel = 1
-vim.opt.laststatus = 3
 vim.opt.linebreak = true
 vim.opt.list = true
 vim.opt.listchars = 'tab:>-,trail:-,nbsp:+'
