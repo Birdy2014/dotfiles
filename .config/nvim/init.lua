@@ -11,9 +11,6 @@ External Requirements:
     - tsserver
     - texlab
     - bashls
-- Debug Adapters (start debugging with F5)
-    - lldb (with /bin/lldb-vscode binary)
-    - debugpy
 
 Run :PackerSync after changing the config file and to update plugins.
 
@@ -39,7 +36,7 @@ end
 require('packer').startup(function()
     use 'wbthomason/packer.nvim'
 
-    -- Dependencies
+    --- Dependencies
     use {
         'sindrets/diffview.nvim',
         module = 'diffview'
@@ -50,7 +47,7 @@ require('packer').startup(function()
         module = 'plenary'
     }
 
-    -- Theme / Statusbars / Visual
+    --- Theme / Statusbars / Visual
     use {
         'eddyekofo94/gruvbox-flat.nvim',
         config = function()
@@ -329,7 +326,7 @@ require('packer').startup(function()
         end
     }
 
-    -- FIXME: not working in neovide with multigrid: https://github.com/folke/noice.nvim/issues/17 https://github.com/neovim/neovim/pull/21080
+    -- BUG: not working in neovide with multigrid: https://github.com/folke/noice.nvim/issues/17 https://github.com/neovim/neovim/pull/21080
     use {
         'folke/noice.nvim',
         tag = '*',
@@ -338,7 +335,7 @@ require('packer').startup(function()
             require('noice').setup {
                 cmdline = {
                     enabled = true,
-                    view = 'cmdline',
+                    view = 'cmdline_popup',
                     opts = {}, -- global options for the cmdline. See section on views
                     ---@type table<string, CmdlineFormat>
                     format = {
@@ -373,7 +370,7 @@ require('packer').startup(function()
                 },
                 -- you can enable a preset for easier configuration
                 presets = {
-                    bottom_search = true, -- use a classic bottom cmdline for search
+                    bottom_search = false, -- use a classic bottom cmdline for search
                     command_palette = true, -- position the cmdline and popupmenu together
                     long_message_to_split = true, -- long messages will be sent to a split
                     inc_rename = false, -- enables an input dialog for inc-rename.nvim
@@ -388,8 +385,34 @@ require('packer').startup(function()
         end
     }
 
+    -- Maybe vim.ui.select will be included in noice.nvim
+    use {
+        'stevearc/dressing.nvim',
+        config = function()
+            require('dressing').setup {
+                input = {
+                    enabled = false,
+                },
+                select = {
+                    enabled = true,
+                    backend = { 'telescope', 'builtin' },
+
+                    -- Trim trailing `:` from prompt
+                    trim_prompt = true,
+
+                    -- Options for telescope selector
+                    -- These are passed into the telescope picker directly. Can be used like:
+                    -- telescope = require('telescope.themes').get_ivy({...})
+                    telescope = nil,
+                }
+            }
+        end
+    }
+
+    -- BUG: This seems to cause a memory leak, see https://github.com/lewis6991/satellite.nvim/issues/33
     use {
         'lewis6991/satellite.nvim',
+        disable = true,
         config = function()
             require('satellite').setup()
         end
@@ -455,7 +478,14 @@ require('packer').startup(function()
         end,
     }
 
-    -- Navigation
+    use {
+        "nvim-zh/colorful-winsep.nvim",
+        config = function ()
+            require('colorful-winsep').setup()
+        end
+    }
+
+    --- Navigation
     use 'christoomey/vim-tmux-navigator'
 
     use {
@@ -549,7 +579,22 @@ require('packer').startup(function()
         end
     }
 
-    -- Coding
+    use {
+        "LeonHeidelbach/trailblazer.nvim",
+        config = function()
+            require("trailblazer").setup {
+                trail_options = {
+                    current_trail_mark_mode = 'global_chron_buf_switch_group_line_sorted',
+                    multiple_mark_symbol_counters_enabled = false,
+                    number_line_color_enabled = false,
+                    symbol_line_enabled = true,
+                },
+                mappings = { },
+            }
+        end,
+    }
+
+    --- Coding
     use {
         'neovim/nvim-lspconfig',
         tag = '*',
@@ -632,6 +677,7 @@ require('packer').startup(function()
         'nvim-treesitter/nvim-treesitter',
         tag = '*',
         run = ':TSUpdate',
+        requires = { 'yioneko/nvim-yati', 'yioneko/vim-tmindent' },
         config = function()
             require('nvim-treesitter.configs').setup {
                 -- NOTE: comment parser is slow
@@ -640,9 +686,28 @@ require('packer').startup(function()
                     enable = true,
                 },
                 indent = {
-                    enable = true,
-                    disable = { 'cpp' }
+                    enable = false,
                 },
+                yati = {
+                    enable = true,
+                    default_lazy = true,
+                    default_fallback = function(lnum, computed, bufnr)
+                        if vim.tbl_contains(tm_fts, vim.bo[bufnr].filetype) then
+                            return require('tmindent').get_indent(lnum, bufnr) + computed
+                        end
+                        -- or any other fallback methods
+                        return require('nvim-yati.fallback').vim_auto(lnum, computed, bufnr)
+                    end,
+                },
+                incremental_selection = {
+                    enable = true,
+                    keymaps = {
+                        init_selection = '<CR>',
+                        node_incremental = '<CR>',
+                        -- scope_incremental = 'grc',
+                        node_decremental = '<BS>',
+                    },
+                }
             }
 
             vim.wo.foldmethod = 'expr'
@@ -952,121 +1017,6 @@ require('packer').startup(function()
     }
 
     use {
-        'mfussenegger/nvim-dap',
-        config = function()
-            local dap = require('dap')
-            dap.adapters.lldb = {
-                type = 'executable',
-                command = '/usr/bin/lldb-vscode',
-                name = 'lldb'
-            }
-
-            dap.configurations.cpp = {
-                {
-                    name = 'Launch',
-                    type = 'lldb',
-                    request = 'launch',
-                    program = function()
-                        return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
-                    end,
-                    cwd = '${workspaceFolder}',
-                    stopOnEntry = false,
-                    args = {},
-                    runInTerminal = false,
-                },
-            }
-
-            dap.configurations.c = dap.configurations.cpp
-            dap.configurations.rust = dap.configurations.cpp
-
-            dap.adapters.python = {
-                type = 'executable';
-                command = '/bin/python';
-                args = { '-m', 'debugpy.adapter' };
-            }
-
-            dap.configurations.python = {
-                {
-                    type = 'python';
-                    request = 'launch';
-                    name = 'Launch file';
-
-                    -- Options below are for debugpy, see https://github.com/microsoft/debugpy/wiki/Debug-configuration-settings for supported options
-
-                    program = '${file}';
-                    pythonPath = function()
-                        local cwd = vim.fn.getcwd()
-                        if vim.fn.executable(cwd .. '/venv/bin/python') == 1 then
-                            return cwd .. '/venv/bin/python'
-                        elseif vim.fn.executable(cwd .. '/.venv/bin/python') == 1 then
-                            return cwd .. '/.venv/bin/python'
-                        elseif vim.fn.executable(cwd .. '/env/bin/python') == 1 then
-                            return cwd .. '/env/bin/python'
-                        else
-                            return '/usr/bin/python'
-                        end
-                    end;
-                },
-            }
-        end
-    }
-
-    use {
-        'rcarriga/nvim-dap-ui',
-        requires = 'mfussenegger/nvim-dap',
-        config = function()
-            require('dapui').setup {
-                icons = { expanded = '▾', collapsed = '▸' },
-                mappings = {
-                    -- Use a table to apply multiple mappings
-                    expand = { '<CR>', '<2-LeftMouse>' },
-                    open = 'o',
-                    remove = 'd',
-                    edit = 'e',
-                    repl = 'r',
-                },
-                layouts = {
-                    {
-                        elements = {
-                            -- Elements can be strings or table with id and size keys.
-                            { id = 'scopes', size = 0.25 },
-                            'breakpoints',
-                            'stacks',
-                            'watches',
-                        },
-                        size = 40,
-                        position = 'left',
-                    },
-                    {
-                        elements = {
-                            'repl',
-                            'console',
-                        },
-                        size = 10,
-                        position = 'bottom',
-                    },
-                },
-                floating = {
-                    max_height = nil, -- These can be integers or a float between 0 and 1.
-                    max_width = nil, -- Floats will be treated as percentage of your screen.
-                    mappings = {
-                        close = { 'q', '<Esc>' },
-                    },
-                },
-                windows = { indent = 1 },
-            }
-        end
-    }
-
-    use {
-        'theHamsta/nvim-dap-virtual-text',
-        requires = 'mfussenegger/nvim-dap',
-        config = function()
-            require('nvim-dap-virtual-text').setup()
-        end
-    }
-
-    use {
         'vuki656/package-info.nvim',
         tag = '*',
         requires = 'MunifTanjim/nui.nvim',
@@ -1075,7 +1025,7 @@ require('packer').startup(function()
         end
     }
 
-    -- Languages
+    --- Languages
     use {
         'lluchs/vim-wren',
         ft = 'wren'
@@ -1086,7 +1036,7 @@ require('packer').startup(function()
         ft = 'bsv'
     }
 
-    -- Other
+    --- Other
     use {
         'vimwiki/vimwiki',
         config = function()
@@ -1213,18 +1163,32 @@ require('packer').startup(function()
     }
 
     use {
+        'chomosuke/term-edit.nvim',
+        tag = 'v1.*',
+        config = function()
+            require 'term-edit'.setup {
+                -- Mandatory option:
+                -- Set this to a lua pattern that would match the end of your prompt.
+                -- Or a table of multiple lua patterns where at least one would match the
+                -- end of your prompt at any given time.
+                -- For most bash/zsh user this is '%$ '.
+                -- For most powershell/fish user this is '> '.
+                -- For most windows cmd user this is '>'.
+                prompt_end = '%$ ',
+                -- How to write lua patterns: https://www.lua.org/pil/20.2.html
+            }
+        end
+    }
+
+    use {
         'folke/which-key.nvim',
         after = {
-            'nvim-dap',
-            'nvim-dap-ui',
             'hop.nvim',
             'gitsigns.nvim'
         },
         config = function()
             vim.g.mapleader = ' '
 
-            local dap = require('dap')
-            local dapui = require('dapui')
             local hop = require('hop')
             local gitsigns = require('gitsigns')
 
@@ -1330,25 +1294,11 @@ require('packer').startup(function()
                     d = { '<cmd>TroubleToggle document_diagnostics<cr>', 'Document Diagnostics' },
                     D = { '<cmd>TroubleToggle workspace_diagnostics<cr>', 'Workspace Diagnostics' },
                 },
-                -- debug
-                ['<leader>d'] = {
-                    name = 'Debug',
-                    t = { dapui.toggle, 'Toggle DAP UI' },
-                    b = { dap.toggle_breakpoint, 'Toggle breakpoint' },
-                    B = { function() dap.set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, 'Set breakpoint condition' },
-                    p = { function() dap.set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, 'Set breakpoint log' },
-                    r = { dap.repl.open, 'Open REPL' },
-                    l = { dap.run_last, 'Run last' },
-                },
                 -- open
                 ['<leader>o'] = {
                     name = 'Open',
                     t = { function() vim.cmd('terminal ' .. (vim.env.SHELL or vim.opt.shell)) end, 'Open terminal' }
                 },
-                ['<F5>'] = { dap.continue, 'Continue' },
-                ['<F10>'] = { dap.step_over, 'Step over' },
-                ['<F11>'] = { dap.step_into, 'Step into' },
-                ['<F12>'] = { dap.step_out, 'Step out' },
                 -- hop
                 ['s'] = { hop.hint_words, 'Hop word' },
                 ['S'] = { function() hop.hint_words({ multi_windows = true }) end, 'Hop word Multi Window' },
@@ -1362,6 +1312,18 @@ require('packer').startup(function()
                 -- git
                 ['[h'] = { gitsigns.prev_hunk, 'Previous git hunk' },
                 [']h'] = { gitsigns.next_hunk, 'Next git hunk' },
+                -- trailblazer.nvim marks
+                ['<leader>m'] = {
+                    name = 'Trail Marks',
+                    n = { function() require('trailblazer').new_trail_mark() end, 'New trail mark' },
+                    b = { function() require('trailblazer').track_back() end, 'Track back' },
+                    d = { function() require('trailblazer').delete_all_trail_marks() end, 'Delete all trail marks' },
+                    p = { function() require('trailblazer').paste_at_last_trail_mark() end, 'Paste at last trail mark' },
+                    P = { function() require('trailblazer').paste_at_all_trail_marks() end, 'Paste at all trail marks' },
+                    s = { function() require('trailblazer').set_trail_mark_select_mode() end, 'Set trail mark select mode' },
+                },
+                ['<A-h>'] = { function() require('trailblazer').peek_move_previous_up() end, 'Peek previous mark' },
+                ['<A-l>'] = { function() require('trailblazer').peek_move_next_down() end, 'Peek next mark' },
                 -- other
                 ['Y'] = { 'y$', 'Yank to end', noremap = false },
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -1394,12 +1356,11 @@ require('packer').startup(function()
                 ['ää'] = { ']]', '' },
                 ['Ö'] = { '{', '', noremap = false },
                 ['Ä'] = { '}', '', noremap = false },
-                ['n'] = { ':Normal ', 'Execute normal mode command on lines', silent = false }
-            }, { mode = 'v' })
+            }, { mode = 'x' })
 
             -- terminal
             wk.register({
-                ['<esc><esc>'] = { '<c-bslash><c-n>', 'Exit Terminal Mode' },
+                ['<esc>'] = { '<c-bslash><c-n>', 'Exit Terminal Mode' },
                 ['<c-h>'] = { '<c-bslash><c-n><cmd>TmuxNavigateLeft<cr>', 'Window Left' },
                 ['<c-j>'] = { '<c-bslash><c-n><cmd>TmuxNavigateDown<cr>', 'Window Down' },
                 ['<c-k>'] = { '<c-bslash><c-n><cmd>TmuxNavigateUp<cr>', 'Window Up' },
