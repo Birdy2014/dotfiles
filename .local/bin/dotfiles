@@ -23,12 +23,14 @@ pkglist=(
     "xdg-desktop-portal-wlr"
     "noto-fonts"
     "polkit-gnome"
+    "ttf-jetbrains-mono-nerd"
 
     # other applications
     "neovim"
     "firefox"
     "zathura"
     "zathura-pdf-mupdf"
+    "zathura-ps"
     "git"
     "sudo"
     "clang"
@@ -38,7 +40,6 @@ pkglist=(
 )
 
 aurpkgs=(
-    "nerd-fonts-jetbrains-mono"
     "rofi-lbonn-wayland"
     "gruvbox-material-gtk-theme-git"
     "gruvbox-material-icon-theme-git"

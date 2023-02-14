@@ -50,8 +50,27 @@ require('packer').startup(function()
     --- Theme / Statusbars / Visual
     use {
         'eddyekofo94/gruvbox-flat.nvim',
+        disable = true,
         config = function()
             vim.cmd('colorscheme gruvbox-flat')
+
+            vim.defer_fn(function()
+                vim.g.terminal_color_0 = '#282828'
+                vim.g.terminal_color_1 = '#cc241d'
+                vim.g.terminal_color_2 = '#98971a'
+                vim.g.terminal_color_3 = '#d79921'
+                vim.g.terminal_color_4 = '#458588'
+                vim.g.terminal_color_5 = '#b16286'
+                vim.g.terminal_color_6 = '#689d6a'
+                vim.g.terminal_color_7 = '#a89984'
+            end, 0)
+        end
+    }
+
+    use {
+        'sainnhe/gruvbox-material',
+        config = function()
+            vim.cmd('colorscheme gruvbox-material')
 
             vim.defer_fn(function()
                 vim.g.terminal_color_0 = '#282828'
@@ -116,7 +135,7 @@ require('packer').startup(function()
             local lualine = require('lualine')
             lualine.setup {
                 options = {
-                    theme = 'gruvbox-flat',
+                    theme = 'gruvbox-material',
                     section_separators = {},
                     component_separators = '|',
                     icons_enabled = true,
@@ -286,7 +305,7 @@ require('packer').startup(function()
                 dashboard.button('e', '  New file', '<cmd>ene<cr>'),
                 dashboard.button('SPC f f', '  Find file', '<cmd>Telescope find_files<cr>'),
                 dashboard.button('SPC f p', '  Open Projects', '<cmd>Telescope project<cr>'),
-                dashboard.button('SPC f m', 'ﲉ  Find Man Pages', '<cmd>Telescope man_pages sections=["1","2","3","4","5","6","7","8","9"]<cr>'),
+                dashboard.button('SPC f m', 'ﲉ  Find Man Pages', '<cmd>Telescope man_pages sections=["ALL"]<cr>'),
                 dashboard.button('SPC t t', 'פּ  Open File Tree', '<cmd>NvimTreeToggle<cr>'),
                 dashboard.button('u', '  Update plugins' , '<cmd>PackerSync<cr>'),
                 dashboard.button('q', '  Quit' , '<cmd>qa<cr>'),
@@ -415,6 +434,13 @@ require('packer').startup(function()
         disable = true,
         config = function()
             require('satellite').setup()
+        end
+    }
+
+    use {
+        'petertriho/nvim-scrollbar',
+        config = function()
+            require('scrollbar').setup()
         end
     }
 
@@ -957,7 +983,7 @@ require('packer').startup(function()
                     ['<S-Tab>'] = cmp.mapping(mapping_shift_tab, { 'c' }),
                 },
                 sources = {
-                    { name = 'cmdline', keyword_pattern = [=[[^[:blank:w]]*]=] }
+                    { name = 'cmdline', keyword_length = 2 } -- keyword_length is a workaround for https://github.com/hrsh7th/cmp-cmdline/issues/75 on :w
                 }
             })
         end
@@ -1269,7 +1295,7 @@ require('packer').startup(function()
                     s = { function() require('telescope.builtin').lsp_dynamic_workspace_symbols() end, 'Find LSP Symbols' },
                     S = { '<cmd>Telescope symbols<cr>', 'Find Symbols' },
                     p = { '<cmd>Telescope project<cr>', 'Find Projects' },
-                    m = { function() require('telescope.builtin').man_pages({ sections = { '1', '2', '3', '4', '5', '6', '7', '8', '9' } }) end, 'Find Man Pages' },
+                    m = { function() require('telescope.builtin').man_pages({ sections = { 'ALL' } }) end, 'Find Man Pages' },
                     r = { function() require('telescope.builtin').lsp_references({ jump_type = 'never' }) end, 'Find LSP References' },
                 },
                 -- LSP / Diagnostics
@@ -1284,6 +1310,8 @@ require('packer').startup(function()
                 },
                 ['[d'] = { vim.diagnostic.goto_prev, 'Previous Diagnostic' },
                 [']d'] = { vim.diagnostic.goto_next, 'Next Diagnostic' },
+                ['[D'] = { function() vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR }) end, 'Previous Error Diagnostic' },
+                [']D'] = { function() vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR }) end, 'Next Error Diagnostic' },
                 -- toggle
                 ['<leader>t'] = {
                     name = 'Toggle',
@@ -1369,6 +1397,8 @@ require('packer').startup(function()
                 ['<m-j>'] = { function() if vim.bo.buflisted then vim.cmd'BufferNext' end end, 'Next Buffer' },
                 ['<m-q>'] = { function() if vim.bo.buflisted then vim.cmd'BufferClose!' else vim.cmd'bd!' end end, 'Close Buffer' },
                 ['<m-Q>'] = { function() if vim.bo.buflisted then vim.cmd'BufferClose!' else vim.cmd'bd!' end end, 'Close Buffer' },
+                ['<c-p>'] = { '<up>', 'Previous Command' },
+                ['<c-n>'] = { '<down>', 'Next Command' },
             }, { mode = 't' })
 
             -- cmdline

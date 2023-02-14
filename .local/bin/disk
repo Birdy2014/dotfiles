@@ -1,7 +1,7 @@
 #!/usr/bin/sh
 
 menu() {
-    local selection=$(printf 'Mount\nUnmount' | dmenu)
+    local selection=$(printf 'Mount\nUnmount' | rofi -dmenu -p 'Action')
     case "$selection" in
         Mount) mount;;
         Unmount) unmount;;
@@ -18,11 +18,11 @@ unmount() {
 
 selm() {
     #                                                                         remove disks  remove disk str  remove mounted    trim whitespace
-    PART=$(lsblk --noheadings --list --output=TYPE,MOUNTPOINT,NAME,SIZE,LABEL | grep part | cut -d' ' -f2- | sed '/^\//d' | sed 's/^[ \t]*//;s/[ \t]*$//' | dmenu -l 10 | awk '{print $1}')
+    PART=$(lsblk --noheadings --list --output=TYPE,MOUNTPOINT,NAME,SIZE,LABEL | grep part | cut -d' ' -f2- | sed '/^\//d' | sed 's/^[ \t]*//;s/[ \t]*$//' | rofi -dmenu -p 'Partition' | awk '{print $1}')
 }
 
 selu() {
-    PART=$(lsblk --noheadings --list --output=TYPE,NAME,SIZE,LABEL,MOUNTPOINT | grep part | cut -d' ' -f2- | sed '/\//!d' | dmenu -l 10 | awk '{print $1}')
+    PART=$(lsblk --noheadings --list --output=TYPE,NAME,SIZE,LABEL,MOUNTPOINT | grep part | cut -d' ' -f2- | sed '/\//!d' | rofi -dmenu -p 'Partition' | awk '{print $1}')
 }
 
 menu
