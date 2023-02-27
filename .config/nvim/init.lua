@@ -195,7 +195,6 @@ require('packer').startup(function()
                 end
             })
 
-            local tree_cb = require'nvim-tree.config'.nvim_tree_callback
             require('nvim-tree').setup {
                 hijack_cursor = true,
                 update_cwd = true,
@@ -233,33 +232,33 @@ require('packer').startup(function()
                     mappings = {
                         custom_only = true,
                         list = {
-                            { key = {'<CR>', 'o', '<2-LeftMouse>'}, cb = tree_cb('edit') },
-                            { key = {'c', '<2-RightMouse>'},        cb = tree_cb('cd') },
-                            { key = '<',                            cb = tree_cb('prev_sibling') },
-                            { key = '>',                            cb = tree_cb('next_sibling') },
-                            { key = 'P',                            cb = tree_cb('parent_node') },
-                            { key = '<BS>',                         cb = tree_cb('close_node') },
-                            { key = '<Tab>',                        cb = tree_cb('preview') },
-                            { key = 'K',                            cb = tree_cb('first_sibling') },
-                            { key = 'J',                            cb = tree_cb('last_sibling') },
-                            { key = 'I',                            cb = tree_cb('toggle_git_ignored') },
-                            { key = 'H',                            cb = tree_cb('toggle_dotfiles') },
-                            { key = 'R',                            cb = tree_cb('refresh') },
-                            { key = 'a',                            cb = tree_cb('create') },
-                            { key = 'D',                            cb = tree_cb('remove') },
-                            { key = 'r',                            cb = tree_cb('rename') },
-                            { key = '<C-r>',                        cb = tree_cb('full_rename') },
-                            { key = 'd',                            cb = tree_cb('cut') },
-                            { key = 'y',                            cb = tree_cb('copy') },
-                            { key = 'p',                            cb = tree_cb('paste') },
-                            { key = 'Y',                            cb = tree_cb('copy_path') },
-                            { key = 'gy',                           cb = tree_cb('copy_name') },
-                            { key = '[c',                           cb = tree_cb('prev_git_item') },
-                            { key = ']c',                           cb = tree_cb('next_git_item') },
-                            { key = 'u',                            cb = tree_cb('dir_up') },
-                            { key = 's',                            cb = tree_cb('system_open') },
-                            { key = 'q',                            cb = tree_cb('close') },
-                            { key = 'g?',                           cb = tree_cb('toggle_help') },
+                            { key = {'<CR>', 'o', '<2-LeftMouse>'}, action = 'edit' },
+                            { key = {'c', '<2-RightMouse>'},        action = 'cd' },
+                            { key = '<',                            action = 'prev_sibling' },
+                            { key = '>',                            action = 'next_sibling' },
+                            { key = 'P',                            action = 'parent_node' },
+                            { key = '<BS>',                         action = 'close_node' },
+                            { key = '<Tab>',                        action = 'preview' },
+                            { key = 'K',                            action = 'first_sibling' },
+                            { key = 'J',                            action = 'last_sibling' },
+                            { key = 'I',                            action = 'toggle_git_ignored' },
+                            { key = 'H',                            action = 'toggle_dotfiles' },
+                            { key = 'R',                            action = 'refresh' },
+                            { key = 'a',                            action = 'create' },
+                            { key = 'D',                            action = 'remove' },
+                            { key = 'r',                            action = 'rename' },
+                            { key = '<C-r>',                        action = 'full_rename' },
+                            { key = 'd',                            action = 'cut' },
+                            { key = 'y',                            action = 'copy' },
+                            { key = 'p',                            action = 'paste' },
+                            { key = 'Y',                            action = 'copy_path' },
+                            { key = 'gy',                           action = 'copy_name' },
+                            { key = '[c',                           action = 'prev_git_item' },
+                            { key = ']c',                           action = 'next_git_item' },
+                            { key = 'u',                            action = 'dir_up' },
+                            { key = 's',                            action = 'system_open' },
+                            { key = 'q',                            action = 'close' },
+                            { key = 'g?',                           action = 'toggle_help' },
                         }
                     }
                 },
@@ -327,7 +326,7 @@ require('packer').startup(function()
         config = function()
             require('indent_blankline').setup {
                 buftype_exclude = { 'terminal' },
-                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg', 'aerial', 'noice' },
+                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg', 'aerial', 'noice', 'markdown' },
                 space_char_blankline = ' ',
                 show_current_context = true
             }
@@ -440,7 +439,12 @@ require('packer').startup(function()
     use {
         'petertriho/nvim-scrollbar',
         config = function()
-            require('scrollbar').setup()
+            require('scrollbar').setup{
+                handlers = {
+                    cursor = false,
+                    gitsigns = true,
+                },
+            }
         end
     }
 
@@ -505,9 +509,35 @@ require('packer').startup(function()
     }
 
     use {
-        "nvim-zh/colorful-winsep.nvim",
-        config = function ()
-            require('colorful-winsep').setup()
+        'b0o/incline.nvim',
+        config = function()
+            require('incline').setup {
+                render = function(props)
+                    -- generate name
+                    local bufname = vim.api.nvim_buf_get_name(props.buf)
+                    if bufname == "" then
+                        return "[No name]"
+                    end
+
+                    -- ":." is the filename relative to the PWD (=project)
+                    bufname = vim.fn.fnamemodify(bufname, ":.")
+
+                    -- find devicon for the bufname
+                    local icon = require("nvim-web-devicons").get_icon(bufname, nil, { default = true })
+
+                    -- cut the content if it takes more than half of the screen
+                    local max_len = vim.api.nvim_win_get_width(props.win) / 2
+
+                    if #bufname > max_len then
+                        return icon .. " …" .. string.sub(bufname, #bufname - max_len, -1)
+                    else
+                        return icon .. " " .. bufname
+                    end
+                end,
+                hide = {
+                    only_win = true
+                }
+            }
         end
     }
 
@@ -598,10 +628,23 @@ require('packer').startup(function()
     }
 
     use {
-        'mg979/vim-visual-multi',
-        setup = function()
-            vim.g.VM_set_statusline = 0
-            vim.g.VM_silent_exit = 1
+        'cshuaimin/ssr.nvim',
+        module = 'ssr',
+        -- Calling setup is optional.
+        config = function()
+            require('ssr').setup {
+                min_width = 50,
+                min_height = 5,
+                max_width = 120,
+                max_height = 25,
+                keymaps = {
+                    close = 'q',
+                    next_match = 'n',
+                    prev_match = 'N',
+                    replace_confirm = '<cr>',
+                    replace_all = '<leader><cr>',
+                },
+            }
         end
     }
 
@@ -1146,6 +1189,15 @@ require('packer').startup(function()
     }
 
     use {
+        "iamcco/markdown-preview.nvim",
+        run = function() vim.fn["mkdp#util#install"]() end,
+        ft = 'markdown',
+        config = function()
+            vim.keymap.set('n', '<leader>tp', '<cmd>MarkdownPreviewToggle<cr>', { desc = "Toggle markdown preview" })
+        end
+    }
+
+    use {
         'nvim-telescope/telescope-symbols.nvim',
         requires = 'nvim-telescope/telescope.nvim',
         after = 'telescope.nvim'
@@ -1352,6 +1404,8 @@ require('packer').startup(function()
                 },
                 ['<A-h>'] = { function() require('trailblazer').peek_move_previous_up() end, 'Peek previous mark' },
                 ['<A-l>'] = { function() require('trailblazer').peek_move_next_down() end, 'Peek next mark' },
+                -- ssr.nvim
+                ['<leader>sr'] = { function() require('ssr').open() end, 'Open SSR' },
                 -- other
                 ['Y'] = { 'y$', 'Yank to end', noremap = false },
                 ['<esc>'] = { '<cmd>noh<cr>', 'Hide search highlight' },
@@ -1375,6 +1429,8 @@ require('packer').startup(function()
                 -- hop
                 ['s'] = { hop.hint_words, 'Hop word' },
                 ['S'] = { function() hop.hint_words({ multi_windows = true }) end, 'Hop word Multi Window' },
+                -- ssr.nvim
+                ['<leader>sr'] = { function() require('ssr').open() end, 'Open SSR' },
                 -- Other
                 ['<'] = { '<gv', 'Unindent' },
                 ['>'] = { '>gv', 'Indent' },
@@ -1520,7 +1576,6 @@ vim.opt.linebreak = true
 vim.opt.list = true
 vim.opt.listchars = 'tab:>-,trail:-,nbsp:+'
 vim.opt.number = true
-vim.opt.relativenumber = true
 vim.opt.showbreak = '↪ '
 vim.opt.showmode = false
 vim.opt.termguicolors = true
@@ -1533,7 +1588,7 @@ vim.opt.splitbelow = true
 vim.opt.splitright = true
 
 -- spelling
-vim.opt.spelllang = { 'en', 'de' }
+vim.opt.spelllang = { 'en', 'de_20' }
 
 -- folding
 vim.opt.foldlevel = 99
@@ -1559,6 +1614,7 @@ vim.opt.timeoutlen = 500
 vim.opt.undofile = true
 vim.opt.virtualedit = 'block'
 vim.opt.shell = '/bin/sh' -- Fix performance issues with nvim-tree.lua and potentially some other bugs
+vim.opt.backupcopy = 'yes' -- Fix reloading issues with parcel
 
 --- -----------------------
 ---     COMMANDS
@@ -1574,6 +1630,15 @@ function Sort()
 end
 
 vim.cmd[[command! -range=% -bang Sort lua Sort()]]
+
+function compile_markdown()
+    local filename = vim.api.nvim_buf_get_name(0)
+    local output_filename = filename:match("^.+/(.+).md$") .. ".html"
+    os.execute("pandoc --standalone --katex -o " .. output_filename .. " " .. filename .. " 2>/dev/null")
+    vim.notify("File compiled to " .. output_filename)
+end
+
+vim.cmd[[command! -range=% -bang CompileMarkdown lua compile_markdown()]]
 
 -- Workaround for https://github.com/neovim/neovim/issues/19649 taken from https://github.com/neovim/neovim/issues/19649#issuecomment-1327287313
 local function getlines(location)

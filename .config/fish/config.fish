@@ -1,8 +1,9 @@
 fish_add_path -p $HOME/.local/share/cargo/bin
 fish_add_path -p $HOME/.local/bin
+fish_add_path -p $HOME/.nix-profile/bin
 
-set -gx EDITOR /usr/bin/nvim
-set -gx VISUAL /usr/bin/nvim
+set -gx EDITOR 'nvim'
+set -gx VISUAL 'nvim'
 
 if status is-interactive
     set fish_greeting
@@ -16,6 +17,7 @@ if status is-interactive
     alias :q 'exit'
 
     set -gx MANPAGER 'nvim +Man!'
+    set -gx LESS '--mouse -r'
 
     if test ! -z "$NVIM"
         alias nvim 'nvim --server $NVIM --remote'

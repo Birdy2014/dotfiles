@@ -8,3 +8,9 @@ configuration {
 }
 
 @theme "gruvbox-dark"
+
+@media (min-width: 1000px) {
+    window {
+        width: 1000px;
+    }
+}

@@ -127,9 +127,15 @@ handle_mime() {
             timeout $TIMEOUT_SECONDS 7z l -p -- "${FILE_PATH}"
             exit 1;;
 
-        application/vnd.rar)
+        application/vnd.rar|application/x-rar)
             # Avoid password prompt by providing empty password
-            timeout $TIMEOUT_SECONDS unrar lt -p- -- "${FILE_PATH}"
+            timeout $TIMEOUT_SECONDS unrar lb -p- -- "${FILE_PATH}"
+            exit 1;;
+
+        ## Epub
+        application/epub+zip)
+            timeout $TIMEOUT_SECONDS gnome-epub-thumbnailer --size '512' "$FILE_PATH" "$IMAGE_CACHE_PATH" \
+                && cache_if_needed_and_display_image "$IMAGE_CACHE_PATH" && exit 1
             exit 1;;
     esac
 }
