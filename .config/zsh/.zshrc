@@ -29,9 +29,16 @@ alias tm='tmux new-session -A -s main'
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 alias tetris=tetriscurses
 alias gap='git add -p'
+alias rm='rm -I'
+alias cp='cp -i'
+
+if [[ ! -z "$NVIM" ]]; then
+    alias nvim='nvim --server $NVIM --remote'
+fi
 
 # Variables
 export MANPAGER='nvim +Man!'
+export LESS='--mouse -r'
 
 # Functions
 function set_terminal_title() {
@@ -49,40 +56,81 @@ bindkey -M vicmd ' ' edit-command-line
 bindkey -v '^?' backward-delete-char
 
 # Change cursor shape for different vi modes.
+_set-cursor-shape-for-keymap() {
+    local shape=0
+    case "$1" in
+        main)       shape=5;;
+        viins)      shape=5;; # vi insert: beam
+        isearch)    shape=5;; # inc search: beam
+        command)    shape=5;; # read a command name: beam
+        vicmd)      shape=2;; # vi cmd: block
+        visual)     shape=2;; # vi visual mode: block
+        viopp)      shape=0;; # vi operator pending mode: block
+    esac
+    printf $'\e[%d q' "$shape"
+}
+
 zle-keymap-select() {
-    if [[ ${KEYMAP} == vicmd ]] || [[ $1 = 'block' ]]; then
-        echo -ne '\e[1 q'
-    elif [[ ${KEYMAP} == main ]] || [[ ${KEYMAP} == viins ]] || [[ ${KEYMAP} = '' ]] || [[ $1 = 'beam' ]]; then
-        echo -ne '\e[5 q'
-    fi
+    _set-cursor-shape-for-keymap "${KEYMAP}"
 }
 zle -N zle-keymap-select
 
-echo -ne '\e[5 q' # Use beam shape cursor on startup.
+_set-cursor-shape-for-keymap main
 precmd() {
-    echo -ne '\e[5 q'; # Use beam shape cursor for each new prompt.
-    set_terminal_title zsh
+    _set-cursor-shape-for-keymap main
+    set_terminal_title zsh - $(pwd)
+
+    if [[ -z "$NEW_LINE_BEFORE_PROMPT" ]]; then
+        NEW_LINE_BEFORE_PROMPT=1
+    else
+        echo
+    fi
 }
 
+alias clear='unset NEW_LINE_BEFORE_PROMPT; clear'
+
 preexec() {
-    echo -ne '\e[5 q'; # beam shape cursor after prompt
+    _set-cursor-shape-for-keymap main
     set_terminal_title "$2"
 }
 
+# Incremental search
+bindkey '^r' history-incremental-search-backward
+
 # Theme
-MNML_INFOLN=(mnml_err mnml_jobs mnml_uhp)
-MNML_MAGICENTER=()
+SPACESHIP_USER_SHOW=always
+SPACESHIP_EXIT_CODE_SHOW=true
+SPACESHIP_SUDO_SHOW=true
+SPACESHIP_PROMPT_ADD_NEWLINE=false
+SPACESHIP_EXIT_CODE_SYMBOL=''
+
+SPACESHIP_PROMPT_ORDER=(
+    user           # Username section
+    dir            # Current directory section
+    host           # Hostname section
+    git            # Git section (git_branch + git_status)
+    venv           # virtualenv section
+    conda          # conda virtualenv section
+    gnu_screen     # GNU Screen section
+    exec_time      # Execution time
+    line_sep       # Line break
+    jobs           # Background jobs indicator
+    exit_code      # Exit code section
+    #sudo           # Sudo indicator
+    char           # Prompt character
+)
+
+# Autosuggestion
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
 # Plugins
-[ ! -f ~/.config/zsh/antigen.zsh ] && curl -L git.io/antigen > ~/.config/zsh/antigen.zsh
+[ ! -f $ZDOTDIR/antigen.zsh ] && curl -L git.io/antigen > $ZDOTDIR/antigen.zsh
 typeset -a ANTIGEN_CHECK_FILES=(${ZDOTDIR:-~}/.zshrc ${ZDOTDIR:-~}/antigen.zsh)
 source $ZDOTDIR/antigen.zsh
 
 antigen bundle zsh-users/zsh-syntax-highlighting
 antigen bundle zsh-users/zsh-autosuggestions
-antigen bundle subnixr/minimal
 antigen bundle jimhester/per-directory-history
+antigen theme spaceship-prompt/spaceship-prompt
 
 antigen apply
-
-ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=buffer-empty # workaround for autosuggestion not disappearing with subnixr/minimal

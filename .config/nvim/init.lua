@@ -16,6 +16,12 @@ Run :PackerSync after changing the config file and to update plugins.
 
 ]]
 
+-- Disable unused providers
+vim.g.loaded_node_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+
 --- -----------------------
 ---        PLUGINS
 --- -----------------------
@@ -175,6 +181,7 @@ require('packer').startup(function()
 
     use {
         'romgrk/barbar.nvim',
+        tag = 'v1.5.0',
         requires = 'kyazdani42/nvim-web-devicons',
         config = function()
             require('bufferline').setup {
@@ -264,7 +271,56 @@ require('packer').startup(function()
                 },
                 renderer = {
                     highlight_git = true,
-                }
+                },
+                -- sort files with numbers correctly
+                sort_by = function(nodes)
+                    table.sort(nodes, function(a, b)
+                        local chars_a = {string.byte(a.name, 1, #a.name)}
+                        local chars_b = {string.byte(b.name, 1, #b.name)}
+                        local i_a = 1
+                        local i_b = 1
+                        for i = 1, math.max(#chars_a, #chars_b) do
+                            c_a = chars_a[i_a]
+                            c_b = chars_b[i_b]
+
+                            if not c_a then
+                                return true
+                            elseif not c_b then
+                                return false
+                            end
+
+                            -- compare numbers
+                            local number_string_a = ""
+                            while c_a and c_a >= 48 and c_a <= 57 do
+                                number_string_a = number_string_a .. string.char(c_a)
+                                i_a = i_a + 1
+                                c_a = chars_a[i_a]
+                            end
+
+                            local number_string_b = ""
+                            while c_b and c_b >= 48 and c_b <= 57 do
+                                number_string_b = number_string_b .. string.char(c_b)
+                                i_b = i_b + 1
+                                c_b = chars_b[i_b]
+                            end
+
+                            if #number_string_a == 0 and #number_string_b > 0 then
+                                return true
+                            elseif #number_string_a > 0 and #number_string_b == 0 then
+                                return false
+                            elseif #number_string_a > 0 and #number_string_b > 0 then
+                                return tonumber(number_string_a) < tonumber(number_string_b)
+                            end
+
+                            -- compare chars
+                            if c_a ~= c_b then
+                                return c_a < c_b
+                            end
+                            i_a = i_a + 1
+                            i_b = i_b + 1
+                        end
+                    end)
+                end
             }
         end
     }
@@ -361,7 +417,7 @@ require('packer').startup(function()
                         search_down = { kind = 'search', pattern = '^/', icon = ' ', lang = 'regex' },
                         search_up = { kind = 'search', pattern = '^%?', icon = ' ', lang = 'regex' },
                         filter = { pattern = '^:%s*!', icon = '$', lang = 'bash' },
-                        lua = { pattern = '^:%s*lua%s+', icon = '', lang = 'lua' },
+                        lua = { pattern = { "^:%s*lua%s+", "^:%s*lua%s*=%s*", "^:%s*=%s*" }, icon = "", lang = "lua" },
                         help = { pattern = '^:%s*he?l?p?%s+', icon = '' },
                         input = {}, -- Used by input()
                     },
@@ -453,46 +509,19 @@ require('packer').startup(function()
         'stevearc/stickybuf.nvim',
         config = function()
             require('stickybuf').setup{
-                -- 'bufnr' will pin the exact buffer (PinBuffer)
-                -- 'buftype' will pin the buffer type (PinBuftype)
-                -- 'filetype' will pin the filetype (PinFiletype)
-                buftype = {
-                    ['']     = false,
-                    acwrite  = false,
-                    help     = 'buftype',
-                    nofile   = false,
-                    nowrite  = false,
-                    quickfix = 'buftype',
-                    terminal = false,
-                    prompt   = 'bufnr',
-                },
-                wintype = {
-                    autocmd  = false,
-                    popup    = 'bufnr',
-                    preview  = false,
-                    command  = false,
-                    ['']     = false,
-                    unknown  = false,
-                    floating = false,
-                },
-                filetype = {
-                    aerial = 'filetype',
-                    NvimTree = 'filetype',
-                    toggleterm = 'filetype'
-                },
-                bufname = {
-                    ['Neogit.*Popup'] = 'bufnr',
-                },
-                -- Some autocmds for plugins that need a bit more logic
-                -- Set to `false` to disable the autocmd
-                autocmds = {
-                    -- Only pin defx if it was opened as a split (has fixed height/width)
-                    defx = [[au FileType defx if &winfixwidth || &winfixheight | silent! PinFiletype | endif]],
-                    -- Only pin fern if it was opened as a split (has fixed height/width)
-                    fern = [[au FileType fern if &winfixwidth || &winfixheight | silent! PinFiletype | endif]],
-                    -- Only pin neogit if it was opened as a split (there is more than one window)
-                    neogit = [[au FileType NeogitStatus,NeogitLog,NeogitGitCommandHistory if winnr('$') > 1 | silent! PinFiletype | endif]],
-                }
+                get_auto_pin = function(bufnr)
+                    local buftype = vim.bo[bufnr].buftype
+                    local filetype = vim.bo[bufnr].filetype
+                    local bufname = vim.api.nvim_buf_get_name(bufnr)
+
+                    if filetype == 'NvimTree' and (vim.wo.winfixwidth or vim.wo.winfixheight) then
+                        return 'filetype'
+                    elseif filetype == 'toggleterm' then
+                        return 'filetype'
+                    end
+
+                    return require('stickybuf').should_auto_pin(bufnr)
+                end
             }
         end
     }
@@ -750,9 +779,11 @@ require('packer').startup(function()
         config = function()
             require('nvim-treesitter.configs').setup {
                 -- NOTE: comment parser is slow
-                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'markdown_inline', 'ninja', 'nix', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'svelte', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
+                ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'markdown_inline', 'ninja', 'nix', 'org', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'svelte', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
+                    disable = { 'org' },
+                    additional_vim_regex_highlighting = { 'org', 'latex' },
                 },
                 indent = {
                     enable = false,
@@ -930,7 +961,6 @@ require('packer').startup(function()
                     { name = 'path' },
                     { name = 'luasnip' },
                     { name = 'latex_symbols' },
-                    { name = 'neorg' },
                     {
                         name = 'buffer',
                         option = {
@@ -944,6 +974,7 @@ require('packer').startup(function()
                             keyword_pattern = [[\k\+]]
                         }
                     },
+                    { name = 'orgmode' },
                 },
                 formatting = {
                     format = function(entry, vim_item)
@@ -963,7 +994,6 @@ require('packer').startup(function()
                             path = '[Path]',
                             luasnip = '[Snippet]',
                             latex_symbols = '[Latex]',
-                            neorg = '[Neorg]',
                             buffer = '[Buffer]',
                         })[entry.source.name]
                         return vim_item
@@ -1036,7 +1066,16 @@ require('packer').startup(function()
         'lewis6991/gitsigns.nvim',
         requires = 'nvim-lua/plenary.nvim',
         config = function()
-            require('gitsigns').setup()
+            require('gitsigns').setup {
+                signs = {
+                    add = { text = "▎" },
+                    change = { text = "▎" },
+                    delete = { text = "" },
+                    topdelete = { text = "" },
+                    changedelete = { text = "▎" },
+                    untracked = { text = "▎" },
+                },
+            }
         end
     }
 
@@ -1138,62 +1177,36 @@ require('packer').startup(function()
     }
 
     use {
-        'nvim-neorg/neorg',
-        tag = '*',
-        requires = 'nvim-lua/plenary.nvim',
-        run = ':Neorg sync-parsers',
-        after = 'nvim-treesitter',
-        ft = 'norg',
-        cmd = 'Neorg',
+        'nvim-orgmode/orgmode',
         config = function()
-            require('neorg').setup {
-                load = {
-                    ['core.defaults'] = {},
-                    ['core.norg.dirman'] = {
-                        config = {
-                            workspaces = {
-                                home = '~/Documents/neorg',
-                            },
-                            autochdir = true,
-                            index = 'index.norg',
-                        }
-                    },
-                    ['core.norg.concealer'] = {
-                        config = {
-                        }
-                    },
-                    ['core.norg.completion'] = {
-                        config = {
-                            engine = 'nvim-cmp'
-                        }
-                    },
-                    ['core.norg.qol.toc'] = {
-                        config = {
-                            toc_split_placement = 'left'
-                        }
-                    },
-                    ['core.keybinds'] = {
-                        config = {
-                            default_keybinds = false,
-                            hook = function(keybinds)
-                                keybinds.remap_event('norg', 'n', '<cr>', 'core.norg.esupports.hop.hop-link')
-                                keybinds.remap_event('toc-split', 'n', '<cr>', 'core.norg.qol.toc.hop-toc-link')
-                                keybinds.remap_event('toc-split', 'n', 'q', 'core.norg.qol.toc.close')
-                                keybinds.remap_event('toc-split', 'n', '<esc>', 'core.norg.qol.toc.close')
-                            end,
-                        }
-                    }
-                }
+            local orgmode = require('orgmode')
+            orgmode.setup_ts_grammar()
+
+            orgmode.setup {
+                org_highlight_latex_and_related = 'native'
             }
-        end,
+
+            vim.cmd[[autocmd FileType org setlocal foldlevel=99]]
+        end
     }
 
     use {
-        "iamcco/markdown-preview.nvim",
-        run = function() vim.fn["mkdp#util#install"]() end,
+        'iamcco/markdown-preview.nvim',
+        run = function() vim.fn['mkdp#util#install']() end,
         ft = 'markdown',
         config = function()
-            vim.keymap.set('n', '<leader>tp', '<cmd>MarkdownPreviewToggle<cr>', { desc = "Toggle markdown preview" })
+            vim.keymap.set('n', '<leader>tp', '<cmd>MarkdownPreviewToggle<cr>', { desc = 'Toggle markdown preview' })
+        end
+    }
+
+    use {
+        'jbyuki/nabla.nvim',
+        after = 'which-key.nvim',
+        config = function()
+            local nabla = require('nabla')
+
+            vim.keymap.set('n', '<leader>p', nabla.popup, { desc = 'Preview Math in Popup' })
+            vim.keymap.set('n', '<leader>tm', nabla.toggle_virt, { desc = 'Toggle Math Preview' })
         end
     }
 
@@ -1236,24 +1249,6 @@ require('packer').startup(function()
             require('nvim-autopairs').setup {
                 disable_filetype = { 'TelescopePrompt' , 'vim' },
                 break_undo = false, -- Workaround for https://github.com/smjonas/live-command.nvim/issues/16
-            }
-        end
-    }
-
-    use {
-        'chomosuke/term-edit.nvim',
-        tag = 'v1.*',
-        config = function()
-            require 'term-edit'.setup {
-                -- Mandatory option:
-                -- Set this to a lua pattern that would match the end of your prompt.
-                -- Or a table of multiple lua patterns where at least one would match the
-                -- end of your prompt at any given time.
-                -- For most bash/zsh user this is '%$ '.
-                -- For most powershell/fish user this is '> '.
-                -- For most windows cmd user this is '>'.
-                prompt_end = '%$ ',
-                -- How to write lua patterns: https://www.lua.org/pil/20.2.html
             }
         end
     }
@@ -1385,8 +1380,6 @@ require('packer').startup(function()
                 -- move line
                 ['<m-c-k>'] = { ':m -2<cr>==', 'Move line up' },
                 ['<m-c-j>'] = { ':m +1<cr>==', 'Move line down' },
-                -- start neorg
-                ['<leader>n'] = { ':Neorg workspace home<cr>', 'Start Neorg' },
                 -- tmux
                 [tmux_prefix] = tmux_keys,
                 -- git
@@ -1639,6 +1632,40 @@ function compile_markdown()
 end
 
 vim.cmd[[command! -range=% -bang CompileMarkdown lua compile_markdown()]]
+
+-- Create a custom namespace. This will aggregate signs from all other
+-- namespaces and only show the one with the highest severity on a
+-- given line
+local ns = vim.api.nvim_create_namespace("my_namespace")
+
+-- Get a reference to the original signs handler
+local orig_signs_handler = vim.diagnostic.handlers.signs
+
+-- Override the built-in signs handler
+vim.diagnostic.handlers.signs = {
+    show = function(_, bufnr, _, opts)
+        -- Get all diagnostics from the whole buffer rather than just the
+        -- diagnostics passed to the handler
+        local diagnostics = vim.diagnostic.get(bufnr)
+
+        -- Find the "worst" diagnostic per line
+        local max_severity_per_line = {}
+        for _, d in pairs(diagnostics) do
+            local m = max_severity_per_line[d.lnum]
+            if not m or d.severity < m.severity then
+                max_severity_per_line[d.lnum] = d
+            end
+        end
+
+        -- Pass the filtered diagnostics (with our custom namespace) to
+        -- the original handler
+        local filtered_diagnostics = vim.tbl_values(max_severity_per_line)
+        orig_signs_handler.show(ns, bufnr, filtered_diagnostics, opts)
+    end,
+    hide = function(_, bufnr)
+        orig_signs_handler.hide(ns, bufnr)
+    end,
+}
 
 -- Workaround for https://github.com/neovim/neovim/issues/19649 taken from https://github.com/neovim/neovim/issues/19649#issuecomment-1327287313
 local function getlines(location)

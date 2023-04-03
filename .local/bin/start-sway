@@ -18,7 +18,6 @@ export _JAVA_AWT_WM_NONREPARENTING=1
 # nvidia-specific workarounds
 if lsmod | grep nvidia > /dev/null; then
     export WLR_NO_HARDWARE_CURSORS=1 # Fix invisible cursor
-    export WLR_RENDERER=vulkan # Fix most flicker
     export GBM_BACKEND=nvidia-drm
 
     #export XWAYLAND_NO_GLAMOR=1 # Fix flicker in XWayland by disabling hardware acceleration. Makes gaming impossible. Not needed on nvidia-open
@@ -32,7 +31,7 @@ if lsmod | grep nvidia > /dev/null; then
     export EGL_PLATFORM=wayland
 
     # "-D noscanout" fixes lines in fullscreen games
-    exec sway --unsupported-gpu -D noscanout
+    exec systemd-cat -t sway -- sway --unsupported-gpu -D noscanout
 fi
 
-exec sway
+exec systemd-cat -t sway -- sway

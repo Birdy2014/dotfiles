@@ -66,7 +66,7 @@ handle_mime() {
             exit 1;;
 
         ## Text
-        text/* | */xml | application/json)
+        text/* | */xml | application/json | application/javascript)
             # Syntax highlight
             highlight --out-format=ansi "${FILE_PATH}" && exit 1
             cat "${FILE_PATH}" && exit 1

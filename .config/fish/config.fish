@@ -15,6 +15,7 @@ if status is-interactive
     alias config '/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
     alias gap 'git add -p'
     alias :q 'exit'
+    alias rm 'rm -I'
 
     set -gx MANPAGER 'nvim +Man!'
     set -gx LESS '--mouse -r'
