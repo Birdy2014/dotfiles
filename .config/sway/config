@@ -8,8 +8,6 @@
 # - wpctl
 # - brightnessctl
 
-# TODO: use "bindsym --inhibited" to ignore shortcut inhibitor
-
 # ---------
 # Variables
 # ---------
@@ -161,6 +159,7 @@ bindsym $mod+Shift+9 move container to workspace $ws9
 bindsym $mod+Shift+0 move container to workspace $ws10
 
 # Multimedia Keys
+bindsym --locked $mod+m exec wpctl set-mute @DEFAULT_SOURCE@ toggle
 bindsym --locked XF86AudioMicMute exec wpctl set-mute @DEFAULT_SOURCE@ toggle
 bindsym --locked XF86AudioMute exec wpctl set-mute @DEFAULT_SINK@ toggle
 bindsym --locked XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_SINK@ 5%- --limit 1
@@ -215,6 +214,7 @@ bindsym Control+Mod4+Mod1+q exit
 bindsym Control+Mod4+Mod1+l exec loginctl lock-session
 bindsym Control+Mod4+Mod1+s exec systemctl poweroff
 bindsym Control+Mod4+Mod1+r exec systemctl reboot
+bindsym Control+Mod4+Mod1+h exec systemctl hibernate
 
 # Scratchpad
 for_window [app_id="org.keepassxc.KeePassXC"] move scratchpad
@@ -222,8 +222,12 @@ for_window [app_id="org.keepassxc.KeePassXC" title=".*Unlock Database.*"] move w
 bindsym $mod+o scratchpad show
 
 # Disable shortcuts inhibitor
-seat seat0 shortcuts_inhibitor disable
-bindsym --inhibited $mod+Menu seat seat0 shortcuts_inhibitor toggle
+seat * shortcuts_inhibitor disable
+set $mode_hotkeygrab Hotkey grab: mod+Shift+z to exit
+bindsym $mod+Shift+z mode "$mode_hotkeygrab"
+mode "$mode_hotkeygrab" {
+  bindsym $mod+Shift+z mode "default"
+}
 
 # ---------------
 # External config

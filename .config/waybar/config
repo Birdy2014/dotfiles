@@ -38,11 +38,13 @@
     "custom/playerctl": {
         "exec": "~/.config/waybar/scripts/playerctl.sh",
         "on-click": "playerctl-current play-pause",
-        "interval": 2
+        "interval": 2,
+        "escape": true
     },
     "custom/calendar": {
         "exec": "~/.config/waybar/scripts/calendar.sh",
-        "interval": 600
+        "interval": 600,
+        "escape": true
     },
     "idle_inhibitor": {
         "format": "{icon}",

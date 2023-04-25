@@ -1,7 +1,7 @@
 --[[
 
 External Requirements:
-- Neovim 0.8+
+- Neovim 0.9+
 - Terminal with support for unicode and truecolors
 - A patched font from https://www.nerdfonts.com/
 - Language Servers:
@@ -236,42 +236,48 @@ require('packer').startup(function()
                 },
                 view = {
                     width = 40,
-                    mappings = {
-                        custom_only = true,
-                        list = {
-                            { key = {'<CR>', 'o', '<2-LeftMouse>'}, action = 'edit' },
-                            { key = {'c', '<2-RightMouse>'},        action = 'cd' },
-                            { key = '<',                            action = 'prev_sibling' },
-                            { key = '>',                            action = 'next_sibling' },
-                            { key = 'P',                            action = 'parent_node' },
-                            { key = '<BS>',                         action = 'close_node' },
-                            { key = '<Tab>',                        action = 'preview' },
-                            { key = 'K',                            action = 'first_sibling' },
-                            { key = 'J',                            action = 'last_sibling' },
-                            { key = 'I',                            action = 'toggle_git_ignored' },
-                            { key = 'H',                            action = 'toggle_dotfiles' },
-                            { key = 'R',                            action = 'refresh' },
-                            { key = 'a',                            action = 'create' },
-                            { key = 'D',                            action = 'remove' },
-                            { key = 'r',                            action = 'rename' },
-                            { key = '<C-r>',                        action = 'full_rename' },
-                            { key = 'd',                            action = 'cut' },
-                            { key = 'y',                            action = 'copy' },
-                            { key = 'p',                            action = 'paste' },
-                            { key = 'Y',                            action = 'copy_path' },
-                            { key = 'gy',                           action = 'copy_name' },
-                            { key = '[c',                           action = 'prev_git_item' },
-                            { key = ']c',                           action = 'next_git_item' },
-                            { key = 'u',                            action = 'dir_up' },
-                            { key = 's',                            action = 'system_open' },
-                            { key = 'q',                            action = 'close' },
-                            { key = 'g?',                           action = 'toggle_help' },
-                        }
-                    }
                 },
                 renderer = {
                     highlight_git = true,
                 },
+                on_attach = function(bufnr)
+                    local api = require('nvim-tree.api')
+
+                    local function opts(desc)
+                        return { desc = 'nvim-tree: ' .. desc, buffer = bufnr, noremap = true, silent = true, nowait = true }
+                    end
+
+                    vim.keymap.set('n', '<CR>', api.node.open.edit, opts('Open'))
+                    vim.keymap.set('n', 'o', api.node.open.edit, opts('Open'))
+                    vim.keymap.set('n', '<2-LeftMouse>', api.node.open.edit, opts('Open'))
+                    vim.keymap.set('n', 'c', api.tree.change_root_to_node, opts('CD'))
+                    vim.keymap.set('n', '<2-RightMouse>', api.tree.change_root_to_node, opts('CD'))
+                    vim.keymap.set('n', '<', api.node.navigate.sibling.prev, opts('Previous Sibling'))
+                    vim.keymap.set('n', '>', api.node.navigate.sibling.next, opts('Next Sibling'))
+                    vim.keymap.set('n', 'P', api.node.navigate.parent, opts('Parent Directory'))
+                    vim.keymap.set('n', '<BS>', api.node.navigate.parent_close, opts('Close Directory'))
+                    vim.keymap.set('n', '<Tab>', api.node.open.preview, opts('Open Preview'))
+                    vim.keymap.set('n', 'K', api.node.navigate.sibling.first, opts('First Sibling'))
+                    vim.keymap.set('n', 'J', api.node.navigate.sibling.last, opts('Last Sibling'))
+                    vim.keymap.set('n', 'I', api.tree.toggle_gitignore_filter, opts('Toggle Git Ignore'))
+                    vim.keymap.set('n', 'H', api.tree.toggle_hidden_filter, opts('Toggle Dotfiles'))
+                    vim.keymap.set('n', 'R', api.tree.reload, opts('Refresh'))
+                    vim.keymap.set('n', 'a', api.fs.create, opts('Create'))
+                    vim.keymap.set('n', 'D', api.fs.remove, opts('Delete'))
+                    vim.keymap.set('n', 'r', api.fs.rename, opts('Rename'))
+                    vim.keymap.set('n', '<C-r>', api.fs.rename_sub, opts('Rename: Omit Filename'))
+                    vim.keymap.set('n', 'd', api.fs.cut, opts('Cut'))
+                    vim.keymap.set('n', 'y', api.fs.copy.node, opts('Copy'))
+                    vim.keymap.set('n', 'p', api.fs.paste, opts('Paste'))
+                    vim.keymap.set('n', 'Y', api.fs.copy.relative_path, opts('Copy Relative Path'))
+                    vim.keymap.set('n', 'gy', api.fs.copy.filename, opts('Copy Name'))
+                    vim.keymap.set('n', '[c', api.node.navigate.git.prev, opts('Prev Git'))
+                    vim.keymap.set('n', ']c', api.node.navigate.git.next, opts('Next Git'))
+                    vim.keymap.set('n', 'u', api.tree.change_root_to_parent, opts('Up'))
+                    vim.keymap.set('n', 's', api.node.run.system, opts('Run System'))
+                    vim.keymap.set('n', 'q', api.tree.close, opts('Close'))
+                    vim.keymap.set('n', 'g?', api.tree.toggle_help, opts('Help'))
+                end,
                 -- sort files with numbers correctly
                 sort_by = function(nodes)
                     table.sort(nodes, function(a, b)
@@ -366,14 +372,6 @@ require('packer').startup(function()
                 dashboard.button('q', '  Quit' , '<cmd>qa<cr>'),
             }
             require('alpha').setup(alpha_config)
-        end
-    }
-
-    -- TODO: Replace with the 'splitkeep' option in neovim 0.9
-    use {
-        'luukvbaal/stabilize.nvim',
-        config = function()
-            require('stabilize').setup()
         end
     }
 
@@ -782,8 +780,6 @@ require('packer').startup(function()
                 ensure_installed = { 'bash', 'c', 'c_sharp', 'cmake', 'cpp', 'css', 'cuda', 'dart', 'dockerfile', 'dot', 'fish', 'gdscript', 'glsl', 'go', 'gomod', 'help', 'hjson', 'html', 'java', 'javascript', 'jsdoc', 'json', 'json5', 'kotlin', 'latex', 'lua', 'make', 'markdown', 'markdown_inline', 'ninja', 'nix', 'org', 'php', 'pug', 'python', 'rasi', 'regex', 'rust', 'scss', 'svelte', 'toml', 'tsx', 'typescript', 'verilog', 'vim', 'vue', 'yaml' },
                 highlight = {
                     enable = true,
-                    disable = { 'org' },
-                    additional_vim_regex_highlighting = { 'org', 'latex' },
                 },
                 indent = {
                     enable = false,
@@ -974,7 +970,6 @@ require('packer').startup(function()
                             keyword_pattern = [[\k\+]]
                         }
                     },
-                    { name = 'orgmode' },
                 },
                 formatting = {
                     format = function(entry, vim_item)
@@ -1173,20 +1168,6 @@ require('packer').startup(function()
             }
 
             vim.g.vimwiki_global_ext = 0
-        end
-    }
-
-    use {
-        'nvim-orgmode/orgmode',
-        config = function()
-            local orgmode = require('orgmode')
-            orgmode.setup_ts_grammar()
-
-            orgmode.setup {
-                org_highlight_latex_and_related = 'native'
-            }
-
-            vim.cmd[[autocmd FileType org setlocal foldlevel=99]]
         end
     }
 
@@ -1579,6 +1560,7 @@ vim.opt.eadirection = 'hor'
 vim.opt.equalalways = true
 vim.opt.splitbelow = true
 vim.opt.splitright = true
+vim.opt.splitkeep = 'screen'
 
 -- spelling
 vim.opt.spelllang = { 'en', 'de_20' }
@@ -1608,6 +1590,7 @@ vim.opt.undofile = true
 vim.opt.virtualedit = 'block'
 vim.opt.shell = '/bin/sh' -- Fix performance issues with nvim-tree.lua and potentially some other bugs
 vim.opt.backupcopy = 'yes' -- Fix reloading issues with parcel
+vim.opt.fsync = true -- Prevent potential data loss on system crash
 
 --- -----------------------
 ---     COMMANDS

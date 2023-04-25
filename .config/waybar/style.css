@@ -76,6 +76,8 @@ window#waybar.hidden {
 
 #mode {
     font-weight: bold;
+    background-color: @color-red;
+    color: @color-bg;
 }
 
 #clock {

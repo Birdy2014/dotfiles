@@ -1,0 +1,200 @@
+#!/usr/bin/env python
+
+default_terminal = "kitty"
+
+mime_associations = {
+    "text/*": "nvim.desktop",
+    "image/*": "imv-dir.desktop",
+    "video/*": "mpv.desktop",
+    "audio/*": "mpv.desktop",
+    "application/javascript": "nvim.desktop",
+    "application/json": "nvim.desktop",
+    "application/pdf": "org.pwmt.zathura-pdf-mupdf.desktop",
+    "application/postscript": "org.pwmt.zathura-ps.desktop",
+    "application/python": "nvim.desktop",
+    "application/rss+xml": "nvim.desktop",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "libreoffice-calc.desktop",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "libreoffice-writer.desktop",
+    "application/x-bittorrent": "transmission-gtk.desktop",
+    "application/x-javascript": "nvim.desktop",
+    "application/x-sh": "nvim.desktop",
+    "application/x-shellscript": "nvim.desktop",
+    "application/zip": "org.gnome.FileRoller.desktop",
+    "inode/directory": "org.kde.dolphin.desktop",
+}
+
+scheme_associations = {
+    "http": "firefox.desktop",
+    "https": "firefox.desktop",
+    "mailto": "thunderbird.desktop",
+}
+
+import os
+import re
+import sys
+import subprocess
+
+home_path = os.path.expanduser("~")
+data_home = os.environ.get("XDG_DATA_HOME") or f"{home_path}/.local/share"
+config_home = os.environ.get("XDG_CONFIG_HOME") or f"{home_path}/.config"
+
+application_paths = [
+    f"{data_home}/applications",
+    "/usr/share/applications",
+]
+
+mimeapps_path = f"{config_home}/mimeapps.list"
+
+def main(args):
+    for arg in args[1:]:
+        desktop_file = get_file_association(arg)
+        if not desktop_file:
+            send_notification("Failed to open file", f"Could not find association for {arg}")
+            continue
+        execute_desktop_entry(desktop_file, [arg])
+
+def get_file_association(arg: str) -> str | None:
+    if (match := re.match("(.+)://", arg)) is not None:
+        arg_scheme = match.group(1)
+        for scheme, desktop_file in scheme_associations.items():
+            if re.match(scheme, arg_scheme) is not None:
+                return desktop_file
+        return None
+
+    completed = subprocess.run(["file", "--mime-type", "--brief", "-E", arg], capture_output=True)
+    if completed.returncode != 0:
+        return None
+    arg_mime_type = completed.stdout.decode()
+
+    for mime_type, desktop_file in mime_associations.items():
+        if re.match(mime_type, arg_mime_type) is not None:
+            return desktop_file
+
+def execute_desktop_entry(desktop_file_name: str, args: list[str]):
+    paths = list(filter(os.path.isfile, map(lambda application_directory: os.path.join(application_directory, desktop_file_name), application_paths)))
+
+    if len(paths) == 0:
+        return
+
+    exec_line: str | None = None
+    terminal_line: bool | None = None
+
+    in_desktop_entry = False # Differentiate between Desktop Entries and Desktop Actions
+
+    with open(paths[0], "r") as file:
+        for line in file.readlines():
+            line = line.replace("\n", "")
+
+            if line == "[Desktop Entry]":
+                in_desktop_entry = True
+
+            elif line.startswith("[Desktop Action"):
+                in_desktop_entry = False
+
+            elif in_desktop_entry and line.startswith("Exec="):
+                split = line.split("=", 1)
+
+                if len(split) != 2:
+                    continue
+
+                exec_line = split[1]
+
+            elif in_desktop_entry and line.startswith("Terminal="):
+                split = line.split("=")
+
+                if len(split) != 2:
+                    continue
+
+                if split[1] == "true":
+                    terminal_line = True
+                elif split[1] == "false":
+                    terminal_line = False
+
+    if exec_line is None:
+        return
+
+    process_cmdline = unescape_desktop_entry_exec(exec_line, args)
+
+    if terminal_line and sys.stdout.isatty():
+        # Terminal application in terminal
+        subprocess.run(process_cmdline)
+        return
+
+    if terminal_line and not sys.stdout.isatty():
+        process_cmdline = [default_terminal] + process_cmdline
+
+    subprocess.Popen(["nohup"] + process_cmdline, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+
+def unescape_desktop_entry_exec(exec_line: str, args: list[str]) -> list[str]:
+    # https://specifications.freedesktop.org/desktop-entry-spec/latest/ar01s07.html
+
+    process_cmdline: list[str] = []
+    index = 0
+    tmp_word = ""
+    is_in_string = False
+
+    def eol() -> bool:
+        return index >= len(exec_line)
+
+    def consume_word():
+        word = ""
+
+        while not eol():
+            nonlocal index
+            c = exec_line[index]
+            index += 1
+            if c == " " or c == "\\" or c == "$" or c == "%":
+                return word
+            word += c
+
+        return word
+
+    while not eol():
+        match exec_line[index]:
+            case "$":
+                index += 1
+                env_variable = consume_word()
+                tmp_word += os.environ.get(env_variable, "")
+            case "\\":
+                index += 1
+                tmp_word += exec_line[index]
+                index += 1
+            case "\"":
+                is_in_string = not is_in_string
+                index += 1
+            case " ":
+                if is_in_string:
+                    tmp_word += exec_line[index]
+                    index += 1
+                    continue
+                process_cmdline.append(tmp_word)
+                tmp_word = ""
+                index += 1
+            case "%":
+                index += 1
+                code = exec_line[index]
+                index += 1
+
+                match code:
+                    case "f":
+                        tmp_word += args[0]
+                    case "F":
+                        process_cmdline += args
+                    case "u":
+                        tmp_word += args[0]
+                    case "U":
+                        process_cmdline += args
+            case _:
+                tmp_word += exec_line[index]
+                index += 1
+
+    if tmp_word:
+        process_cmdline.append(tmp_word)
+
+    return process_cmdline
+
+def send_notification(summary: str, body: str) -> None:
+    subprocess.Popen(["notify-send", "-u", "normal", summary, body])
+
+if __name__ == "__main__":
+    main(sys.argv)

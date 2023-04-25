@@ -88,6 +88,10 @@ handle_mime() {
             exit 1;;
 
         ## Image
+        image/x-xcf)
+            handle_fallback
+            exit 1;;
+
         image/*)
             cache_if_needed_and_display_image "$FILE_PATH"
             exit 1;;
@@ -108,6 +112,13 @@ handle_mime() {
             # Get embedded thumbnail
             ffmpeg -i "${FILE_PATH}" -map 0:v -map -0:V -c copy \
               "${IMAGE_CACHE_PATH}" && cache_if_needed_and_display_image "$IMAGE_CACHE_PATH" && exit 1
+
+            # Get conver.png (or other formats) image
+            local directory="$(dirname "$FILE_PATH")"
+            for file in "cover.png" "cover.jpg"; do
+                local cover_image_path="${directory}/${file}"
+                [[ -f "$cover_image_path" ]] && cache_if_needed_and_display_image "$cover_image_path" && exit 1
+            done
             exit 1;;
 
         ## OpenDocument
