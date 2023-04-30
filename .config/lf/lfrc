@@ -1,3 +1,5 @@
+# vim: ft=sh
+
 set previewer ~/.config/lf/preview
 set cleaner ~/.config/lf/clean
 
@@ -34,8 +36,22 @@ set scrolloff 10
 map <enter> shell
 
 # execute current file (must be executable)
-map x $$f
-map X !$f
+map x ${{
+    printf 'Execute "%s" in foreground? [y/N]' "$f"
+    read ans
+    [ "$ans" = "y" ] && {
+        $f
+        printf 'Press any key to continue'
+        read ans
+    } || true
+}}
+map X ${{
+    printf 'Execute "%s" in background? [y/N]' "$f"
+    read ans
+    [ "$ans" = "y" ] && {
+        setsid $f 2>&1 >/dev/null &
+    } || true
+}}
 
 cmd on-cd &{{
     printf "\033]0; $PWD\007" > /dev/tty
@@ -64,6 +80,8 @@ cmd edit ${{
     test -L $f && f=$(readlink -f $f)
     $EDITOR $fx;
 }}
+
+cmd drag &dragon-drop $f
 
 # extract the current file with the right command
 # (xkcd link: https://xkcd.com/1168/)

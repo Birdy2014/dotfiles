@@ -1,6 +1,6 @@
 configuration {
     modi: "combi,drun,run,ssh";
-    font: "JetbrainsMono Nerd Font 12";
+    font: "monospace 12";
     combi-modi: "drun,ssh,run";
     show-icons: true;
     terminal: "kitty";
@@ -9,8 +9,6 @@ configuration {
 
 @theme "gruvbox-dark"
 
-@media (min-width: 1000px) {
-    window {
-        width: 1000px;
-    }
+window {
+    width: 900px;
 }

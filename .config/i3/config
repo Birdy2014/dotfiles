@@ -13,8 +13,6 @@
 set $mod Mod4
 set $term kitty
 set $launcher rofi -show combi
-set $font "NotoSans 10"
-set $monospace-font "JetbrainsMono Nerd Font 10"
 set $cursor-theme LyraX-cursors
 set $gtk-theme "Gruvbox-Material-Dark"
 set $gtk-icon-theme "Gruvbox-Material-Dark"
@@ -65,7 +63,7 @@ client.unfocused        $color-bg-dark  $color-bg-dark    $color-fg   #ffffff   
 # -------------
 # Other theming
 # -------------
-font "pango:NotoSans 10"
+font "pango:sans-serif 10"
 smart_gaps on
 #smart_borders on
 gaps inner 5
@@ -74,8 +72,8 @@ title_align center
 exec_always --no-startup-id gsettings set org.gnome.desktop.interface gtk-theme $gtk-theme
 exec_always --no-startup-id gsettings set org.gnome.desktop.interface icon-theme $gtk-icon-theme
 exec_always --no-startup-id gsettings set org.gnome.desktop.interface cursor-theme $cursor-theme
-exec_always --no-startup-id gsettings set org.gnome.desktop.interface font-name $font
-exec_always --no-startup-id gsettings set org.gnome.desktop.interface monospace-font-name $monospace-font
+exec_always --no-startup-id gsettings set org.gnome.desktop.interface font-name "sans-serif 10"
+exec_always --no-startup-id gsettings set org.gnome.desktop.interface monospace-font-name "monospace 10"
 
 # ------------
 # Window rules

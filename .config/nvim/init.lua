@@ -27,7 +27,8 @@ vim.g.loaded_ruby_provider = 0
 --- -----------------------
 local install_path = vim.fn.stdpath('data')..'/site/pack/packer/start/packer.nvim'
 
-local ran_nvim_notify_setup = false
+vim.g.ran_nvim_notify_setup = false
+vim.g._border = { '🭽', '▔', '🭾', '▕', '🭿', '▁', '🭼', '▏' }
 
 if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
     vim.fn.system({'git', 'clone', 'https://github.com/wbthomason/packer.nvim', install_path})
@@ -394,7 +395,7 @@ require('packer').startup(function()
             notify.setup {
                 stages = 'fade',
             }
-            ran_nvim_notify_setup = true
+            vim.g.ran_nvim_notify_setup = true
         end
     }
 
@@ -439,6 +440,37 @@ require('packer').startup(function()
                         ['vim.lsp.util.stylize_markdown'] = true,
                         ['cmp.entry.get_documentation'] = true,
                     },
+                    hover = {
+                        enabled = true,
+                        silent = false, -- set to true to not show a message if hover is not available
+                        view = nil, -- when nil, use defaults from documentation
+                        ---@type NoiceViewOptions
+                        opts = {
+                            border = {
+                                style = vim.g._border,
+                                padding = { 0, 1 },
+                            },
+                            position = { row = 2, col = 0 },
+                        }, -- merged with defaults from documentation
+                    },
+                    signature = {
+                        enabled = true,
+                        auto_open = {
+                            enabled = true,
+                            trigger = true, -- Automatically show signature help when typing a trigger character from the LSP
+                            luasnip = true, -- Will open signature help when jumping to Luasnip insert nodes
+                            throttle = 50, -- Debounce lsp signature help request by 50ms
+                        },
+                        view = nil, -- when nil, use defaults from documentation
+                        ---@type NoiceViewOptions
+                        opts = {
+                            border = {
+                                style = vim.g._border,
+                                padding = { 0, 1 },
+                            },
+                            position = { row = 2, col = 0 },
+                        }, -- merged with defaults from documentation
+                    }
                 },
                 -- you can enable a preset for easier configuration
                 presets = {
@@ -748,6 +780,8 @@ require('packer').startup(function()
                         allow_incremental_sync = false,
                         debounce_text_changes = 500
                     }
+                elseif lsp == 'bashls' then
+                    conf.filetypes = { 'sh', 'bash' }
                 end
                 lspconfig[lsp].setup(conf)
             end
@@ -933,6 +967,14 @@ require('packer').startup(function()
             end
 
             cmp.setup({
+                window = {
+                    completion = {
+                        border = vim.g._border
+                    },
+                    documentation = {
+                        border = vim.g._border
+                    },
+                },
                 completion = {
                     completeopt = 'menuone,noselect',
                 },
@@ -1456,7 +1498,7 @@ function notify_until_success(message, log_level, options)
 
     notification_timer:start(0, 500, function()
         counter = counter + 1
-        if (ran_nvim_notify_setup or counter >= max_tries) then
+        if (vim.g.ran_nvim_notify_setup or counter >= max_tries) then
             require('notify')(message, log_level, options)
             notification_timer:close()
         end
@@ -1578,7 +1620,7 @@ vim.opt.mouse = 'a'
 vim.opt.mousemodel = 'extend'
 
 -- Gui settings
-vim.opt.guifont = 'JetbrainsMono Nerd Font:h10'
+vim.opt.guifont = 'monospace:h10'
 vim.g.neovide_remember_window_size = false
 
 -- other

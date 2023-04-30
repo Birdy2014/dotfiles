@@ -15,8 +15,6 @@ set $mod Mod4
 set $term kitty
 set $launcher rofi -show combi -terminal $term -run-command "swaymsg exec '{cmd}'" -run-shell-command "swaymsg exec {terminal} '{cmd}'"
 set $file-manager $term lf
-set $font "NotoSans 10"
-set $monospace-font "JetbrainsMono Nerd Font 10"
 set $cursor-theme LyraX-cursors
 set $gtk-theme "Gruvbox-Material-Dark"
 set $gtk-icon-theme "Gruvbox-Material-Dark"
@@ -80,7 +78,7 @@ client.urgent           $color-urgent   $color-urgent     $color-fg   #ffffff   
 # -------------
 # Other theming
 # -------------
-font $font
+font "sans-serif 10"
 smart_gaps on
 smart_borders on
 gaps inner 5
@@ -93,8 +91,8 @@ exec_always {
     gsettings set org.gnome.desktop.interface gtk-theme $gtk-theme
     gsettings set org.gnome.desktop.interface icon-theme $gtk-icon-theme
     gsettings set org.gnome.desktop.interface cursor-theme $cursor-theme
-    gsettings set org.gnome.desktop.interface font-name $font
-    gsettings set org.gnome.desktop.interface monospace-font-name $monospace-font
+    gsettings set org.gnome.desktop.interface font-name "sans-serif 10"
+    gsettings set org.gnome.desktop.interface monospace-font-name "monospace 10"
 }
 
 # ------------
