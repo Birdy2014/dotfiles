@@ -49,8 +49,8 @@
     "idle_inhibitor": {
         "format": "{icon}",
         "format-icons": {
-            "activated": "",
-            "deactivated": ""
+            "activated": "󰈈",
+            "deactivated": "󰈉"
         }
     },
     "tray": {
@@ -58,21 +58,21 @@
         "spacing": 10
     },
     "clock": {
-        "format": "{:%Y-%m-%d %H:%M} ",
+        "format": "{:%Y-%m-%d %H:%M} 󰃰",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
     },
     "cpu": {
         "format": "{usage:>3}% 󰻠",
     },
     "memory": {
-        "format": "{percentage:>3}% ﬙"
+        "format": "{percentage:>3}% 󰘚"
     },
     "temperature": {
         // TODO: "hwmon-path": "/sys/class/hwmon/hwmon2/temp1_input" on Rotkehlchen and something else on Zilpzalp; see https://github.com/Alexays/Waybar/issues/1943
         "critical-threshold": 80,
         // "format-critical": "{temperatureC}°C {icon}",
         "format": "{temperatureC:>2}°C {icon}",
-        "format-icons": ["", "", ""]
+        "format-icons": ["󱃃", "󰔏", "󱃂"]
     },
     "backlight": {
         "format": "{percent:>3}% {icon}",
@@ -96,25 +96,25 @@
     },
     "network": {
         "interval": 10,
-        "format-wifi": "{essid} ({signalStrength:>3}%) 直",
-        "format-ethernet": "{ifname}  {bandwidthDownOctets:>3}  {bandwidthUpOctets:>3} 祝",
-        "format-linked": "{ifname} (No IP) ",
-        "format-disconnected": "Disconnected ",
-        "format-tooltip": "{ifname} {ipaddr} {bandwidthDownOctets}  {bandwidthUpOctets} 祝",
+        "format-wifi": "{essid} ({signalStrength:>3}%) 󰖩",
+        "format-ethernet": "{ifname} 󰌘 {bandwidthDownOctets:>3} 󰇚 {bandwidthUpOctets:>3} 󰕒",
+        "format-linked": "{ifname} (No IP) 󰌚",
+        "format-disconnected": "Disconnected 󰌙",
+        "format-tooltip": "{ifname} {ipaddr} {bandwidthDownOctets} 󰇚 {bandwidthUpOctets} 󰕒",
     },
     "pulseaudio": {
         "format": "{volume:>3}% {icon} {format_source}",
-        "format-bluetooth": "{volume:>3}% {icon} {format_source}",
-        "format-bluetooth-muted": "{icon} {format_source}",
+        "format-bluetooth": "{volume:>3}% {icon}󰂯 {format_source}",
+        "format-bluetooth-muted": "{icon}󰂯 {format_source}",
         "format-muted": "{format_source}",
-        "format-source": "{volume:>3}% ",
-        "format-source-muted": "",
+        "format-source": "{volume:>3}% 󰍬",
+        "format-source-muted": "󰍭",
         "format-icons": {
-            "headphone": "",
-            "hands-free": "",
-            "headset": "",
-            "phone": "",
-            "portable": "",
+            "headphone": "󰋋",
+            "hands-free": "󰥰",
+            "headset": "󰋎",
+            "phone": "󰏲",
+            "portable": "󰏲",
             "default": ["", "", ""]
         },
         "on-click": "swaymsg exec pavucontrol"
