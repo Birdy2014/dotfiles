@@ -192,8 +192,8 @@ bindsym $mod+x sticky toggle
 bindsym $mod+f fullscreen toggle
 
 floating_modifier $mod normal
-bindsym $mod+space floating toggle
-bindsym $mod+Shift+space focus mode_toggle
+bindsym $mod+space focus mode_toggle
+bindsym $mod+Shift+space floating toggle
 
 # Resizing
 mode "resize" {

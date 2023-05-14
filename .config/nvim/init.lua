@@ -16,6 +16,8 @@ Run :PackerSync after changing the config file and to update plugins.
 
 ]]
 
+-- TODO: pin all plugins to commits
+
 -- Disable unused providers
 vim.g.loaded_node_provider = 0
 vim.g.loaded_perl_provider = 0
@@ -381,7 +383,7 @@ require('packer').startup(function()
         config = function()
             require('indent_blankline').setup {
                 buftype_exclude = { 'terminal' },
-                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'norg', 'aerial', 'noice', 'markdown' },
+                filetype_exclude = { 'alpha', 'packer', 'help', 'man', 'NvimTree', 'aerial', 'noice', 'markdown' },
                 space_char_blankline = ' ',
                 show_current_context = true
             }
@@ -399,7 +401,7 @@ require('packer').startup(function()
         end
     }
 
-    -- BUG: not working in neovide with multigrid: https://github.com/folke/noice.nvim/issues/17 https://github.com/neovim/neovim/pull/21080
+    -- BUG: not working in neovide with multigrid: https://github.com/folke/noice.nvim/issues/17
     use {
         'folke/noice.nvim',
         tag = '*',
@@ -794,7 +796,7 @@ require('packer').startup(function()
             end
 
             vim.lsp.handlers['textDocument/publishDiagnostics'] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
-                virtual_text = true,
+                virtual_text = false, -- redundant due to lsp_lines
                 signs = true,
                 underline = true,
                 update_in_insert = true,
@@ -898,6 +900,7 @@ require('packer').startup(function()
 
     use {
         'hrsh7th/nvim-cmp',
+        tag = '1cad30fcffa282c0a9199c524c821eadc24bf939',
         requires = {
             'hrsh7th/cmp-calc',
             'hrsh7th/cmp-nvim-lsp',
@@ -1136,6 +1139,11 @@ require('packer').startup(function()
         module = 'neogit',
         config = function()
             require('neogit').setup{
+                ignored_settings = {
+                    'NeogitPushPopup--force-with-lease',
+                    'NeogitPushPopup--force',
+                    'NeogitCommitPopup--allow-empty',
+                },
                 integrations = {
                     diffview = true
                 },
@@ -1167,6 +1175,15 @@ require('packer').startup(function()
         requires = 'MunifTanjim/nui.nvim',
         config = function()
             require('package-info').setup()
+        end
+    }
+
+    -- TODO: make [d and ]d not open a floating window
+    use {
+        'https://git.sr.ht/~whynothugo/lsp_lines.nvim',
+        tag = '512d8c79637e7aeb889240c2e0ca8ae327940737',
+        config = function()
+            require('lsp_lines').setup()
         end
     }
 
