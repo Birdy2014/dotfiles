@@ -12,8 +12,6 @@ External Requirements:
     - texlab
     - bashls
 
-Run :PackerSync after changing the config file and to update plugins.
-
 ]]
 
 -- Disable unused providers
@@ -412,7 +410,7 @@ require("lazy").setup {
                 dashboard.button("SPC f p", "󰃀  Open Projects", "<cmd>Telescope project<cr>"),
                 dashboard.button("SPC f m", "󰞋  Find Man Pages", "<cmd>Telescope man_pages sections=['ALL']<cr>"),
                 dashboard.button("SPC t t", "󰙅  Open File Tree", "<cmd>NvimTreeToggle<cr>"),
-                dashboard.button("u", "󰚰  Update plugins" , "<cmd>PackerSync<cr>"),
+                dashboard.button("u", "󰚰  Update plugins" , "<cmd>Lazy update<cr>"),
                 dashboard.button("q", "󰅙  Quit" , "<cmd>qa<cr>"),
             }
             require("alpha").setup(alpha_config)
@@ -423,7 +421,7 @@ require("lazy").setup {
         "lukas-reineke/indent-blankline.nvim",
         opts = {
             buftype_exclude = { "terminal" },
-            filetype_exclude = { "alpha", "packer", "help", "man", "NvimTree", "aerial", "noice", "markdown" },
+            filetype_exclude = { "alpha", "lazy", "help", "man", "NvimTree", "aerial", "noice", "markdown" },
             space_char_blankline = " ",
             show_current_context = true
         }
@@ -1465,7 +1463,7 @@ require("lazy").setup {
 
             -- terminal
             wk.register({
-                ["<esc>"] = { "<c-bslash><c-n>", "Exit Terminal Mode" },
+                ["<esc><esc>"] = { "<c-bslash><c-n>", "Exit Terminal Mode" },
                 ["<c-h>"] = { "<c-bslash><c-n><cmd>TmuxNavigateLeft<cr>", "Window Left" },
                 ["<c-j>"] = { "<c-bslash><c-n><cmd>TmuxNavigateDown<cr>", "Window Down" },
                 ["<c-k>"] = { "<c-bslash><c-n><cmd>TmuxNavigateUp<cr>", "Window Up" },
