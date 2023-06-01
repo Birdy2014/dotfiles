@@ -66,7 +66,6 @@ vim.opt.eadirection = "hor"
 vim.opt.equalalways = true
 vim.opt.splitbelow = true
 vim.opt.splitright = true
-vim.opt.splitkeep = "screen"
 
 -- spelling
 vim.opt.spelllang = { "en", "de_20" }
@@ -293,19 +292,25 @@ require("lazy").setup {
 
                     vim.keymap.set("n", "<CR>", api.node.open.edit, opts("Open"))
                     vim.keymap.set("n", "o", api.node.open.edit, opts("Open"))
-                    vim.keymap.set("n", "<2-LeftMouse>", api.node.open.edit, opts("Open"))
+                    vim.keymap.set("n", "O", api.node.run.system, opts("Run System"))
+                    vim.keymap.set("n", "<Tab>", api.node.open.preview, opts("Open Preview"))
+
                     vim.keymap.set("n", "c", api.tree.change_root_to_node, opts("CD"))
-                    vim.keymap.set("n", "<2-RightMouse>", api.tree.change_root_to_node, opts("CD"))
+                    vim.keymap.set("n", "u", api.tree.change_root_to_parent, opts("Up"))
+
                     vim.keymap.set("n", "<", api.node.navigate.sibling.prev, opts("Previous Sibling"))
                     vim.keymap.set("n", ">", api.node.navigate.sibling.next, opts("Next Sibling"))
                     vim.keymap.set("n", "P", api.node.navigate.parent, opts("Parent Directory"))
                     vim.keymap.set("n", "<BS>", api.node.navigate.parent_close, opts("Close Directory"))
-                    vim.keymap.set("n", "<Tab>", api.node.open.preview, opts("Open Preview"))
                     vim.keymap.set("n", "K", api.node.navigate.sibling.first, opts("First Sibling"))
                     vim.keymap.set("n", "J", api.node.navigate.sibling.last, opts("Last Sibling"))
+                    vim.keymap.set("n", "[c", api.node.navigate.git.prev, opts("Prev Git"))
+                    vim.keymap.set("n", "]c", api.node.navigate.git.next, opts("Next Git"))
+                    vim.keymap.set("n", "s", function() require("hop").hint_lines() end)
+
                     vim.keymap.set("n", "I", api.tree.toggle_gitignore_filter, opts("Toggle Git Ignore"))
                     vim.keymap.set("n", "H", api.tree.toggle_hidden_filter, opts("Toggle Dotfiles"))
-                    vim.keymap.set("n", "R", api.tree.reload, opts("Refresh"))
+
                     vim.keymap.set("n", "a", api.fs.create, opts("Create"))
                     vim.keymap.set("n", "D", api.fs.remove, opts("Delete"))
                     vim.keymap.set("n", "r", api.fs.rename, opts("Rename"))
@@ -315,10 +320,8 @@ require("lazy").setup {
                     vim.keymap.set("n", "p", api.fs.paste, opts("Paste"))
                     vim.keymap.set("n", "Y", api.fs.copy.relative_path, opts("Copy Relative Path"))
                     vim.keymap.set("n", "gy", api.fs.copy.filename, opts("Copy Name"))
-                    vim.keymap.set("n", "[c", api.node.navigate.git.prev, opts("Prev Git"))
-                    vim.keymap.set("n", "]c", api.node.navigate.git.next, opts("Next Git"))
-                    vim.keymap.set("n", "u", api.tree.change_root_to_parent, opts("Up"))
-                    vim.keymap.set("n", "s", api.node.run.system, opts("Run System"))
+
+                    vim.keymap.set("n", "R", api.tree.reload, opts("Refresh"))
                     vim.keymap.set("n", "q", api.tree.close, opts("Close"))
                     vim.keymap.set("n", "g?", api.tree.toggle_help, opts("Help"))
                 end,
@@ -410,7 +413,6 @@ require("lazy").setup {
                 dashboard.button("SPC f p", "󰃀  Open Projects", "<cmd>Telescope project<cr>"),
                 dashboard.button("SPC f m", "󰞋  Find Man Pages", "<cmd>Telescope man_pages sections=['ALL']<cr>"),
                 dashboard.button("SPC t t", "󰙅  Open File Tree", "<cmd>NvimTreeToggle<cr>"),
-                dashboard.button("u", "󰚰  Update plugins" , "<cmd>Lazy update<cr>"),
                 dashboard.button("q", "󰅙  Quit" , "<cmd>qa<cr>"),
             }
             require("alpha").setup(alpha_config)
@@ -905,8 +907,7 @@ require("lazy").setup {
     },
 
     {
-        "L3MON4D3/LuaSnip",
-        build = "make install_jsregexp"
+        "L3MON4D3/LuaSnip"
     },
 
     {
@@ -1194,7 +1195,7 @@ require("lazy").setup {
     --- Other
     {
         "vimwiki/vimwiki",
-        config = function()
+        init = function()
             vim.api.nvim_create_autocmd("FileType", {
                 pattern = "vimwiki",
                 callback = function()

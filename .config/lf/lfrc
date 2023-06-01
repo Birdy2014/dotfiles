@@ -98,6 +98,7 @@ cmd extract ${{
         *.zip) unzip -d ${f%.*} $f;;
         *.rar) unrar x -y -op${f%.*} -- $f;;
         *.7z) 7z -o${f%.*} x $f;;
+        *.xz) unxz $f;;
     esac
 }}
 
