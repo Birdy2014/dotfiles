@@ -108,12 +108,12 @@ for_window [workspace="^$ws1$"] floating enable
 for_window [app_id=".*"] border normal
 for_window [class=".*"] border normal
 
-assign [instance="Steam"] $ws5
+assign [instance="^[Ss]team"] $ws5
 assign [class="discord"] $ws7
 assign [app_id="thunderbird"] $ws6
 
 for_window [class="zoom"] floating enable; inhibit_idle open
-for_window [class="Steam"] inhibit_idle none
+for_window [class="^[Ss]team"] inhibit_idle none
 for_window [class="steam_app"] inhibit_idle open
 for_window [class="steam_app" title="Origin"] floating enable
 for_window [class="Birdy3d"] floating enable
@@ -224,7 +224,7 @@ seat * shortcuts_inhibitor disable
 set $mode_hotkeygrab Hotkey grab: mod+Shift+z to exit
 bindsym $mod+Shift+z mode "$mode_hotkeygrab"
 mode "$mode_hotkeygrab" {
-  bindsym $mod+Shift+z mode "default"
+    bindsym $mod+Shift+z mode "default"
 }
 
 # ---------------
@@ -254,6 +254,8 @@ exec swayidle -w \
 exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP=sway
 
 exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
-exec wlsunset
+
+# geolocation seems to be broken?
+exec wlsunset -l 50.1 -L 8.7
 
 exec keepassxc
