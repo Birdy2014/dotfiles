@@ -306,7 +306,6 @@ require("lazy").setup {
                     vim.keymap.set("n", "J", api.node.navigate.sibling.last, opts("Last Sibling"))
                     vim.keymap.set("n", "[c", api.node.navigate.git.prev, opts("Prev Git"))
                     vim.keymap.set("n", "]c", api.node.navigate.git.next, opts("Next Git"))
-                    vim.keymap.set("n", "s", function() require("hop").hint_lines() end)
 
                     vim.keymap.set("n", "I", api.tree.toggle_gitignore_filter, opts("Toggle Git Ignore"))
                     vim.keymap.set("n", "H", api.tree.toggle_hidden_filter, opts("Toggle Dotfiles"))

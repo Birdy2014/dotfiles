@@ -55,6 +55,13 @@ input type:touchpad {
     natural_scroll disabled
 }
 
+# ------
+# Output
+# ------
+output "AOC U34G2G4R3 0x00001553" {
+    mode 3440x1440@144Hz
+}
+
 # Hide cursor after 5 seconds of inactivity
 seat seat0 hide_cursor 5000
 

@@ -4,26 +4,15 @@ export XDG_CURRENT_DESKTOP=sway
 export XDG_SESSION_DESKTOP=sway
 export XDG_SESSION_TYPE=wayland
 
-# enable wayland in applications
+# enable wayland in firefox and thunderbird
 export MOZ_ENABLE_WAYLAND=1
+
+# workaround for Java GUI applications being broken
+export _JAVA_AWT_WM_NONREPARENTING=1
 
 # theming
 export GTK_THEME=Gruvbox-Material-Dark
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export QT_QPA_PLATFORMTHEME=qt5ct
-
-# workarounds
-export _JAVA_AWT_WM_NONREPARENTING=1
-
-# nvidia-specific workarounds
-if lsmod | grep nvidia > /dev/null; then
-    export WLR_NO_HARDWARE_CURSORS=1 # Fix invisible cursor
-    export GBM_BACKEND=nvidia-drm
-
-    export __GLX_VENDOR_LIBRARY_NAME=nvidia # Needed for nvidia OpenGL driver to load
-
-    # "-D noscanout" fixes lines in fullscreen games
-    exec systemd-cat -t sway -- sway --unsupported-gpu -D noscanout
-fi
 
 exec systemd-cat -t sway -- sway

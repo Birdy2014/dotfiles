@@ -34,6 +34,7 @@ scheme_associations: dict[str, str | list[str]] = {
     "https": "firefox.desktop",
     "mailto": "thunderbird.desktop",
     "file": "lf.desktop",
+    "steam": "steam.desktop",
 }
 
 import os
@@ -248,6 +249,12 @@ application_paths = [
     f"{data_home}/applications",
     "/usr/share/applications",
 ]
+
+if data_dirs := os.environ.get("XDG_DATA_DIRS"):
+    for data_dir in data_dirs.split(":"):
+        application_dir = data_dir + "/applications"
+        if os.path.isdir(application_dir):
+            application_paths.append(application_dir)
 
 mimeapps_path = f"{config_home}/mimeapps.list"
 

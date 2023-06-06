@@ -26,7 +26,7 @@ zstyle ':completion:*' menu select
 alias ls='ls --color=auto'
 alias l='ls -lAh'
 alias tm='tmux new-session -A -s main'
-alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+alias config='git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 alias tetris=tetriscurses
 alias gap='git add -p'
 alias rm='rm -I'
