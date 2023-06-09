@@ -5,6 +5,7 @@ default_terminal = "kitty"
 mime_associations: dict[str, str | list[str]] = {
     "text/*": "nvim.desktop",
     "text/html": "firefox.desktop",
+    "text/xml": "firefox.desktop",
     "image/*": "imv-dir.desktop",
     "video/*": "mpv.desktop",
     "audio/*": "mpv.desktop",

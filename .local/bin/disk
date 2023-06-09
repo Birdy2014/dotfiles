@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/env bash
 
 menu() {
     local selection=$(printf 'Mount\nUnmount' | rofi -dmenu -p 'Action')
@@ -18,7 +18,7 @@ unmount() {
 
 selm() {
     #                                                                         remove disks  remove disk str  remove mounted    trim whitespace
-    PART=$(lsblk --noheadings --list --output=TYPE,MOUNTPOINT,NAME,SIZE,LABEL | grep part | cut -d' ' -f2- | sed '/^\//d' | sed 's/^[ \t]*//;s/[ \t]*$//' | rofi -dmenu -p 'Partition' | awk '{print $1}')
+    PART=$(lsblk --noheadings --list --output=TYPE,MOUNTPOINT,NAME,SIZE,LABEL | grep part | cut -d' ' -f2- | sed '/^ *\//d' | sed 's/^[ \t]*//;s/[ \t]*$//' | rofi -dmenu -p 'Partition' | awk '{print $1}')
 }
 
 selu() {

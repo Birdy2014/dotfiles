@@ -6,6 +6,8 @@ export XDG_SESSION_TYPE=wayland
 
 # enable wayland in firefox and thunderbird
 export MOZ_ENABLE_WAYLAND=1
+# enable wayland in electron applications under NixOS
+export NIXOS_OZONE_WL=1
 
 # workaround for Java GUI applications being broken
 export _JAVA_AWT_WM_NONREPARENTING=1
@@ -14,5 +16,10 @@ export _JAVA_AWT_WM_NONREPARENTING=1
 export GTK_THEME=Gruvbox-Material-Dark
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 export QT_QPA_PLATFORMTHEME=qt5ct
+
+if lsmod | grep '^amdgpu' > /dev/null; then
+    # Workaround for dark cursor: https://gitlab.freedesktop.org/drm/amd/-/issues/1513
+    export WLR_NO_HARDWARE_CURSORS=1
+fi
 
 exec systemd-cat -t sway -- sway

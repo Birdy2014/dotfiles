@@ -115,17 +115,17 @@ for_window [workspace="^$ws1$"] floating enable
 for_window [app_id=".*"] border normal
 for_window [class=".*"] border normal
 
-assign [instance="^[Ss]team"] $ws5
-assign [class="discord"] $ws7
-assign [app_id="thunderbird"] $ws6
+assign [class="^[Ss]team$"] $ws5
+assign [class="^discord$"] $ws7
+assign [app_id="^discord$"] $ws7
+assign [app_id="^thunderbird$"] $ws6
 
-for_window [class="zoom"] floating enable; inhibit_idle open
-for_window [class="^[Ss]team"] inhibit_idle none
-for_window [class="steam_app"] inhibit_idle open
-for_window [class="steam_app" title="Origin"] floating enable
-for_window [class="Birdy3d"] floating enable
-for_window [app_id="thunderbird" title=".*Erinnerung(en)?$"] floating enable
-for_window [app_id="firefox" title="(Picture-in-Picture|Bild-im-Bild)"] floating enable; sticky enable
+for_window [class="^zoom$"] floating enable; inhibit_idle open
+for_window [class="^[Ss]team$"] inhibit_idle none
+for_window [class="^steam_app.*$"] floating enable; inhibit_idle open
+for_window [class="^Birdy3d$"] floating enable
+for_window [app_id="^thunderbird$" title="^[1-9]* Erinnerung(en)?$"] floating enable
+for_window [app_id="^firefox$" title="^(Picture-in-Picture|Bild-im-Bild)$"] floating enable; sticky enable
 
 # --------
 # Keybinds
