@@ -117,7 +117,7 @@ vim.opt.rtp:prepend(lazypath)
 
 vim.g.mapleader = " " -- Make sure to set `mapleader` before lazy so your mappings are correct
 
-require("lazy").setup {
+require("lazy").setup({
     --- Theme / Statusbars / Visual
     {
         "sainnhe/gruvbox-material",
@@ -241,7 +241,7 @@ require("lazy").setup {
             vim.api.nvim_create_autocmd("BufWinEnter", {
                 pattern = "NvimTree*",
                 callback = function()
-                    vim.wo.cursorline = true
+                    vim.opt_local.cursorline = true
                 end
             })
 
@@ -760,7 +760,7 @@ require("lazy").setup {
                 end
             end
 
-            local servers = { "clangd", "pyright", "rust_analyzer", "tsserver", "bashls", "texlab", "svelte" }
+            local servers = { "clangd", "pyright", "rust_analyzer", "tsserver", "bashls", "texlab", "svelte", "nil_ls" }
 
             local server_config = {
                 rust_analyzer = {
@@ -1198,7 +1198,7 @@ require("lazy").setup {
             vim.api.nvim_create_autocmd("FileType", {
                 pattern = "vimwiki",
                 callback = function()
-                    vim.wo.spell = true
+                    vim.opt_local.spell = true
                     vim.cmd("hi! link VimwikiSuperScript Normal")
                 end
             })
@@ -1488,7 +1488,13 @@ require("lazy").setup {
             }, { mode = "c", silent = false })
         end
     },
-}
+}, {
+    performance = {
+        rtp = {
+            reset = false
+        }
+    }
+})
 
 --- -----------------------
 ---        AUTOCMDS

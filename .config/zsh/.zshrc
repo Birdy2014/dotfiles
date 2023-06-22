@@ -108,6 +108,7 @@ SPACESHIP_PROMPT_ORDER=(
     user           # Username section
     dir            # Current directory section
     host           # Hostname section
+    nix_shell
     git            # Git section (git_branch + git_status)
     venv           # virtualenv section
     conda          # conda virtualenv section
